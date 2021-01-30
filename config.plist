@@ -1,0 +1,146 @@
+{
+	name = cxl;
+	"version.major" = 0;
+	"version.minor" = 4;
+	"version.revision" = 0;
+	"version.date" = 20180723;
+	autoPublish = true;
+	requires = (
+		ANTForPlugins,
+		PerlForPlugins,
+	);
+	provider = "Tom Graham";
+	"provider.url" = "tgraham@wpi.edu";
+	license = "GNU Affero General Public License v.3";
+	"license.url" = "http://www.gnu.org/licenses/agpl.html";
+	copyright = "(c) 2018";
+	"info.url" = "https://github.com/simplesymmetry/cxl";
+	"history.url" = "https://github.com/simplesymmetry/cxl";
+	executable = "execute.pl";
+	"interpreter.prefix" = "${PerlForPlugins.perl.exe}";
+	author = "Tom Graham (tgraham@wpi.edu)";
+	authorUid = tgraham;
+	languages = (
+		{
+			name = "C++";
+			version = "g++ 3.4.x";
+		},
+	);
+	description = "This is the standard C++ one-step grading script with integrated style checking.\n\nIt includes ANT-based compilation, CxxTest processing of student-written\n\ntests, and support for instructor-written reference tests.";
+	timeoutMultiplier = 2;
+	"timeoutInternalPadding" = 400;
+	assignmentOptions = (
+		{
+			property = testCases;
+			type = fileOrDir;
+			fileTypes = (
+				h,
+			);
+			name = "CxxTest Reference Test Class(es)";
+			description = "A C++ header file (or directory of header files) containing CxxTest tests\n\n  to run against student code to assess completeness of problem coverage.\n\n  If you select a single C++ header file, it must contain a CxxTest test class\n\n  definition.  If you select a directory, it should contain CxxTest test\n\n  classes, all of which will be used.  If you make no selection, an empty\n\n  set of instructor reference tests will be used instead.";
+		},
+		{
+			property = localFiles;
+			type = fileOrDir;
+			name = "Data Files for Student";
+			description = "A file (or a directory of files) to place in the student's current working\n\n  directory when running his/her tests and when running reference tests.  The\n\n  file you select (or the entire contents of the directory you select) will be\n\n  copied into the current working directory during grading so that\n\n  student-written and instructor-written test cases can read and/or write to\n\n  the file(s).  The default is to copy no files.";
+		},
+		{
+			property = assignmentIncludes;
+			type = fileOrDir;
+			fileTypes = ();
+			name = "#Include Directory";
+			description = "A directory of files to place on the include path while compiling the\n\n  student's code (as well as instructor reference tests).  This directory\n\n  appears earlier on the include path than the reusable configuration setting.\n\n  The default is to use no path.";
+		},
+		{
+			property = assignmentLib;
+			type = file;
+			fileTypes = (
+				a,
+			);
+			name = "Static Linking Library";
+			description = "A g++-compatible library file to link with the student's code.  This lib\n\n  file will be included in the link in addition to any specified in the\n\n  reusable options section.";
+		},
+	);
+	optionCategories = (
+		"C++ Settings",
+		"Scoring Settings",
+		"Feedback Settings",
+		"Script Developer",
+	);
+	options = (
+		{
+			property = generalIncludes;
+			type = fileOrDir;
+			fileTypes = ();
+			name = "#Include Directory";
+			description = "A directory of files to place on the include path while compiling the\n\n  student's code (as well as instructor reference tests).  This directory\n\n  appears later on the include path than the assignment-specific configuration\n\n  setting.  The default is to use no path.";
+		},
+		{
+			property = generalLib;
+			type = file;
+			fileTypes = (
+				a,
+			);
+			name = "Static Linking Library";
+			category = "C++ Settings";
+			description = "A g++-compatible library file to link with the student's code.";
+		},
+		{
+			property = "allStudentTestsMustPass";
+			type = boolean;
+			default = true;
+			name = "All Student Tests Must Pass";
+			category = "Scoring Settings";
+			description = "If you are truly following test-driven development practices, then no code\n\n  is ever released until all of its unit tests pass.  If this option is set to\n\n  true, students will not receive a non-zero score or receive further\n\n  assessment feedback unless all student tests pass.  If this option is not\n\n  set, then students may continue to proceed even if some student-written\n\n  tests fail  The student's correctness/testing score is multiplied by the\n\n  proportion of their tests that pass.";
+		},
+		{
+			property = coverageMetric;
+			advanced = true;
+			type = radioChoice;
+			name = "Test Coverage Metric";
+			default = 0;
+			category = "Scoring Settings";
+			description = "Choose the criterion used to measure how thoroughly\n\n                           a student's tests cover the corresponding code.";
+			choices = (
+				{
+					label = "No coverage used";
+					value = 0;
+				},
+				{
+					label = "Methods executed";
+					value = 1;
+				},
+				{
+					label = "Methods + conditions/decisions executed";
+					value = 2;
+				},
+			);
+		},
+		{
+			property = hintsLimit;
+			type = integer;
+			default = 3;
+			name = "Hints Limit";
+			category = "Feedback Settings";
+			description = "Maximum number of hints the\n\n                           student will receive from failed reference tests.";
+		},
+		{
+			property = debug;
+			type = integer;
+			advanced = true;
+			default = 5;
+			name = "Debug Level";
+			category = "Script Developer";
+			description = "Set to a non-zero value for the script to produce debugging output (the\n\n  larger the number, the greater the detail, up to about 5).  Debugging output\n\n  on each grading script run will be e-mailed to the instructor.";
+		},
+		{
+			property = doNotDelete;
+			type = antBoolean;
+			advanced = true;
+			name = "Preserve Derived Files";
+			category = "Script Developer";
+			description = "Set to true to prevent the plug-in from deleting the derived files it\n\n  creates during the build/test process for each submission.  Normally, these\n\n  files are deleted when a given submission has been completely processed.\n\n  This setting is provided for debugging purposes, when one wishes to\n\n  inspect the intermediate test driver source code or other derived files.";
+		},
+	);
+}

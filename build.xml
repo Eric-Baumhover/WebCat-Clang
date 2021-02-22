@@ -60,7 +60,10 @@
     </target>
 
     <!-- Build OS-specific binary files, if necessary -->
-    <target name="assert.o" unless="has.assert.o">
+    
+	<!-- USES GCC, find another workaround.
+	
+	<target name="assert.o" unless="has.assert.o">
       <cc name="gcc" objdir="${scriptHome}/obj">
         <compilerarg value="-c"/>
         <compilerarg value="-w"/>
@@ -69,6 +72,8 @@
         <fileset dir="${scriptHome}/obj" includes="*.c"/>
       </cc>
     </target>
+	
+	>
 
     <!-- Make sure all initial setup is performed correctly. -->
     <target name="init"
@@ -107,6 +112,8 @@
     </target>
 
 
+	<!-- CXXTEST not currently implemented
+
     <target name="generateStudentMain"
         description="generate runStudentTests.cpp from student's tests">
     <apply executable="perl"
@@ -121,20 +128,20 @@
         <arg value="--track-heap"/>
         <arg value="--trap-signals"/>
         <arg value="--trace-stack"/>
-        <!--arg value="- -stack-trace-exe=${student.tests}"/-->
         <arg value="--have-eh"/>
         <arg value="--abort-on-fail"/>
         <arg value="--no-static-init"/>
-    <!-- <arg value="- -ErrorPrinterFile=${resultDir}/student.raw"/> -->
         <arg value="-o"/>
         <arg value="${build}/runStudentTests.cpp"/>
-        <!-- arg value="test-cases/*.h"/ -->
         <fileset dir="." casesensitive="no">
             <include name="**/*.h"/>
         </fileset>
     </apply>
     </target>
+	
+	-->
 
+	<!-- CXXTEST not implemented yet
 
     <target name="generateInstructorMain"
     description="generate runInstructorTests.cpp from instructor's tests">
@@ -150,11 +157,9 @@
         <arg value="--track-heap"/>
         <arg value="--trap-signals"/>
         <arg value="--trace-stack"/>
-        <!--arg value="- -stack-trace-exe=${instructor.tests}"/-->
         <arg value="--have-eh"/>
         <arg value="--abort-on-fail"/>
         <arg value="--no-static-init"/>
-    <!--<arg value="- -ErrorPrinterFile=${resultDir}/instructor.raw"/>-->
         <arg value="-o"/>
         <arg file="${build}/runInstructorTests.cpp"/>
         <fileset dir="${testCasePath}" casesensitive="no">
@@ -162,6 +167,10 @@
         </fileset>
     </apply>
     </target>
+	
+	-->
+	
+	<!-- Coverage not implemented, also need to use llvm-cov and clang
 
     <target name="enable.coverage"
         description="enable coverage instrumentation, if desired"
@@ -182,59 +191,23 @@
     </exec>
     </target>
 
+	-->
 
     <target name="compile"
-        depends="init,generateStudentMain,enable.coverage,disable.coverage"
+        depends="init"
         description="compile student's code">
-    <cc    name="g++"
-           objdir="${build}"
-           outfile="${student.tests}"
-           outtype="executable"
-           rebuild="true"
-           relentless="true"
-           >
-        <compilerarg value="-O0"/>
-        <compilerarg value="-g3"/>
-        <compilerarg value="-Wall"/>
-        <compilerarg value="-fnon-call-exceptions"/>
-        <compilerarg value="-finstrument-functions"/>
-        <compilerarg value="-DCXXTEST_INCLUDE_SYMREADER_DIRECTLY"
-          unless="is.mac"/>
-        <includepath location="${cxxtest.dir}"/>
-        <includepath location="${cxxtest.symreader.dir}"
-          unless="is.mac"/>
-        <includepath location="${basedir}"/>
-        <includepath location="${assignmentIncludes.abs}"
-                     if="assignmentIncludes.abs"/>
-        <includepath location="${generalIncludes.abs}"
-                     if="generalIncludes.abs"/>
-        <fileset dir="${basedir}" casesensitive="false">
-        <include name="**/*.cpp"/>
-        <exclude name="**/main.cpp"/>
-        <exclude name="**/runAllTests.cpp"/>
-        <exclude name="**/run*Tests.cpp"/>
-        </fileset>
-        <fileset dir="${scriptHome}/obj">
-        <include name="**/*.o"/>
-        </fileset>
-        <fileset dir="${build}">
-        <include name="runStudentTests.cpp"/>
-        </fileset>
-        <linkerarg location="end" value ="${assignmentLib.abs}"
-                   if="assignmentLib.abs"/>
-        <linkerarg location="end" value ="${generalLib.abs}"
-                   if="generalLib.abs"/>
-        <linkerarg location="end" value ="${bullseye.lib}" if="bullseye.lib"/>
-        <linkerarg location="start" value ="-F/System/Library/PrivateFrameworks"
-          if="is.mac"/>
-        <linkerarg location="start" value ="-framework" if="is.mac"/>
-        <linkerarg location="start" value ="vmutils" if="is.mac"/>
-        <linkerarg location="start" value ="-L${cxxtest.symreader.dir}"
-          if="is.mac"/>
-        <libset libs="stdc++${cxxtest.extra.libs}"/>
-    </cc>
+	<echo message="building into ${build}/build.exe"/>
+    <exec    executable="clang++" output="${resultDir}/compile.log">
+		<arg value="*.cpp"/>
+		<arg value="-o"/>
+		<arg value="${build}/build.exe"/>
+    </exec>
+	<echo message="built into ${build}/build.exe"/>
+	<exec    executable="${build}/build.exe" output="${resultDir}/run.log">
+    </exec>
     </target>
 
+	<!--
 
     <target name="run.student.tests"
         depends="compile"
@@ -334,6 +307,8 @@
         <env key="CXXTEST_EXE_PATH" value="${instructor.tests}"/>
     </exec>
     </target>
+	
+	-->
 
     <target name="cxl"
     description="Execute perl helper script cxl designed to implement cpplint,
@@ -365,6 +340,6 @@
          ============================================================ -->
 
     <target name="run"
-            depends="init, clean, test, instructorTest, cxl, final-clean"/>
+            depends="init, clean, compile, cxl, final-clean"/>
 
 </project>

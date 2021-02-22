@@ -1,5 +1,5 @@
 {
-	name = cxl;
+	name = clang;
 	"version.major" = 0;
 	"version.minor" = 4;
 	"version.revision" = 0;
@@ -23,7 +23,7 @@
 	languages = (
 		{
 			name = "C++";
-			version = "g++ 3.4.x";
+			version = "clang++";
 		},
 	);
 	description = "This is the standard C++ one-step grading script with integrated style checking.\n\nIt includes ANT-based compilation, CxxTest processing of student-written\n\ntests, and support for instructor-written reference tests.";

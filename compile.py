@@ -1,50 +1,132 @@
-import os, glob, subprocess
+import os, glob, sys, subprocess
+from glob import glob as find
+import webcat as WebCat
 
-cxxtest_dir             = os.getenv('cxxtest_dir')
-cxxtest_symreader_dir   = os.getenv('cxxtest_symreader_dir')
-basedir                 = os.getenv('basedir')
-student_tests           = os.getenv('student_tests')
-code_coverage           = os.getenv('code_coverage')
-mac                     = os.getenv('mac')
-script_home             = os.getenv('script_home')
-build                   = os.getenv('build')
+def getCompilerArgs(test_type, config : dict):
 
-args = ['clang++-8','-O0','-g3','-Wall','-fnon-call-exceptions','-finstrument-functions','-DCXXTEST_INCLUDE_SYMREADER_DIRECTLY']
+    arg_log = 'Deciding on compilation arguments.\n\n'
 
-if True or code_coverage == 'true':
-    print('Code coverage enabled. Adding args: -fprofile-instr-generate -fcoverage-mapping')
-    args += ['-fprofile-instr-generate','-fcoverage-mapping']
+    # Get necessary values from environment.
+    cxxtest_dir             = config['cxxtest.dir']
+    basedir                 = config['basedir']
+    result_dir              = config['resultDir']
+    code_coverage           = config.get('codeCoverage', False)
+    mac                     = config.get('mac', False)
+    script_home             = config['scriptHome']
+    build                   = config['build']
+    assignment_includes     = config.get('assignmentIncludes', False)
+    general_includes        = config.get('generalIncludes', False)
+    assignment_lib          = config.get('assignmentLib', False)
+    general_lib             = config.get('generalLib', False)
 
-if mac == 'true':
-    args + ['-lobjc','-lsymreader']
-else:
-    args + ['-lbfd']
+    # Add default args.
+    args = ['-O0','-g3','-Wall','-fnon-call-exceptions','-finstrument-functions']
+    arg_log += 'Using default compilation arguments: ' + ' '.join(args) + '\n'
 
-args += ['-I' + cxxtest_dir,'-I' + cxxtest_symreader_dir,'-I' + basedir,'-lstdc++','-o',student_tests]
+    # If code coverage is needed, add necessary args.
+    # For context on the comparison with code coverage,
+    # if there is no value for an ant variable, 
+    # it uses the string literal.
+    #
+    # Also, the code coverage file is outputted based
+    # on the LLVM_PROFILE_FILE env variable which is 
+    # passed in in the build.xml
+    if code_coverage and test_type == "student":
+        arg_log += 'Code coverage enabled. Adding args: -fprofile-instr-generate -fcoverage-mapping \n'
+        args += ['-fprofile-instr-generate','-fcoverage-mapping']
 
-files = glob.glob(basedir + '/*.cpp')
-files += glob.glob(script_home + '/obj/*.o')
-files += [build + '/runStudentTests.cpp']
-args += files
+    # Mac vs not mac require different libraries.
+    if mac:
+        args + ['-lobjc','-lsymreader']
+    else:
+        args + ['-lbfd']
+    arg_log += 'Adding platform specific arguments.\n'
 
-command = ' '.join(args)
+    # Include cxxtest and stdc++
+    args += ['-I' + cxxtest_dir,'-I' + basedir,'-lstdc++']
+    arg_log += 'Adding default include directories: cxxtest and basedir.\n'
+    arg_log += 'Adding stdc++ as a library.\n'
 
-print('Python executing command: ' + command)
+    # If additional includes exit for this assignment, 
+    # add them.
+    if assignment_includes:
+        arg_log += "Assignment Includes exist, adding.\n"
+        args += ['-I' + assignment_includes]
 
-print(os.popen(command).read())
+    # Other includes.
+    if general_includes:
+        arg_log += "General Includes exist, adding.\n"
+        args += ['-I' + general_includes]
 
-print('Running command: ' + student_tests)
-print(os.popen(student_tests).read())
+    # Similar to the includes, but with libraries this time.
+    assignment_lib_valid    = assignment_lib != False
+    general_lib_valid       = general_lib    != False
+    if assignment_lib_valid or general_lib_valid:
+        
+        #If there are any libraries start a linking group.
+        args += ['--start-group']
 
-print('Running command: ' + 'llvm-profdata-8 merge -sparse ' + build + '/runStudentTests.profraw -o ' + build + '/runStudentTests.profdata')
-print(os.popen('llvm-profdata-8 merge -sparse ' + build + '/runStudentTests.profraw -o ' + build + '/runStudentTests.profdata').read())
+        if assignment_lib_valid:
+            arg_log += "Assignment Library exists, adding.\n"
+            args += ['-L' + assignment_lib]
+        
+        if general_lib_valid:
+            arg_log += "General Library exists, adding.\n"
+            args += ['-L' + general_lib]
+        
+        args += ['--end-group']
 
-sources = ' '.join(glob.glob(basedir + '/*.cpp') + glob.glob(basedir + '/*.h'))
+    # Output correctly if its a student or an 
+    # instructor test.
+    if test_type == 'student':
+        student_tests           = config['student.tests']
+        args += ['-o', student_tests]
+    elif test_type == 'instructor':
+        instructor_tests        = config['instructor.tests']
+        args += ['-o', instructor_tests]
 
-print('Running command: ' + 'llvm-cov-8 export ' + '-summary-only -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources)
-cov_data = os.popen('llvm-cov-8 export ' + '-summary-only -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
-print(cov_data)
 
-print('Running command: ' + 'llvm-cov-8 show ' + '-region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources)
-cov_report = os.popen('llvm-cov-8 show ' + '-Xdemangler c++filt -Xdemangler -n -region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
-print(cov_report)
+    # Files need to be added, all cpp files first.
+    files = find(basedir + '/*.cpp')
+    # Then the o files in the plugin to prevent
+    # system calls.
+    files += find(script_home + '/obj/*.o')
+    # Finally use the correct tests.
+    if test_type == 'student':
+        files += [build + '/runStudentTests.cpp']
+    elif test_type == 'instructor':
+        files += [build + '/runInstructorTests.cpp']
+    
+    arg_log += '\n'
+    args += files
+
+    return args, arg_log
+
+def compile(test_type, config):
+    try:
+        print('Compiling tests for type: ' + test_type)
+
+        # We use an argument to determine which args to use, as well as environment variables.
+        args, arg_log = getCompilerArgs(test_type, config)
+
+        # Complete the command.
+        command = ['clang++-8'] + args
+
+        arg_log += '\nExecuting command: ' + ' '.join(command) + '\n'
+
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process.wait()
+        code = process.returncode
+        arg_log += 'Exited with code ' + str(code) + '\n\n'
+        log, error = process.communicate()
+
+        title_start = 'Student Compiling ' if test_type == 'student' else 'Instructor Compiling '
+
+        WebCat.addReport(config, test_type + '_compile_log.html', title_start + 'Tests', arg_log + log)
+        if code != 0:
+            WebCat.addReport(config, test_type + '_compile_error_log.html', title_start + 'Errors', error)
+        return code
+    except:
+        print("Compile error: ", str(sys.exc_info()))
+
+    

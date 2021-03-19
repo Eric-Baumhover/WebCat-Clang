@@ -9,24 +9,24 @@
 		ANTForPlugins,
 		PerlForPlugins,
 	);
-	provider = "Tom Graham";
-	"provider.url" = "tgraham@wpi.edu";
+	provider = "Eric Baumhover";
+	"provider.url" = "ebaumhover@qmail.qcc.edu";
 	license = "GNU Affero General Public License v.3";
-	"license.url" = "http://www.gnu.org/licenses/agpl.html";
-	copyright = "(c) 2018";
-	"info.url" = "https://github.com/simplesymmetry/cxl";
-	"history.url" = "https://github.com/simplesymmetry/cxl";
-	executable = "execute.pl";
-	"interpreter.prefix" = "${PerlForPlugins.perl.exe}";
-	author = "Tom Graham (tgraham@wpi.edu)";
-	authorUid = tgraham;
+	"license.url" = "https://github.com/Eric-Baumhover/WebCat-Clang";
+	copyright = "(c) 2021";
+	"info.url" = "https://github.com/Eric-Baumhover/WebCat-Clang";
+	"history.url" = "https://github.com/Eric-Baumhover/WebCat-Clang";
+	executable = "execute.py";
+	"interpreter.prefix" = "python";
+	author = "Eric Baumhover (ebaumhover@qmail.qcc.edu)";
+	authorUid = ebaumhover;
 	languages = (
 		{
 			name = "C++";
-			version = "clang++";
+			version = "clang++8";
 		},
 	);
-	description = "This is the standard C++ one-step grading script with integrated style checking.\n\nIt includes ANT-based compilation, CxxTest processing of student-written\n\ntests, and support for instructor-written reference tests.";
+	description = "This is the standard C++ one-step grading script with integrated style checking.\n\nIt includes CxxTest processing of student-written\n\ntests, and support for instructor-written reference tests.";
 	timeoutMultiplier = 2;
 	"timeoutInternalPadding" = 400;
 	assignmentOptions = (
@@ -38,6 +38,24 @@
 			);
 			name = "CxxTest Reference Test Class(es)";
 			description = "A C++ header file (or directory of header files) containing CxxTest tests\n\n  to run against student code to assess completeness of problem coverage.\n\n  If you select a single C++ header file, it must contain a CxxTest test class\n\n  definition.  If you select a directory, it should contain CxxTest test\n\n  classes, all of which will be used.  If you make no selection, an empty\n\n  set of instructor reference tests will be used instead.";
+		},
+		{
+			property = minimumTestCases;
+			type = integer;
+			name = "Minimum Student Tests";
+			description = "Decides how many test cases is needed as a minimum for a 100% grade. A value of zero means ignore.";
+		},
+		{
+			property = "allStudentTestsMustPass";
+			type = boolean;
+			name = "All Student Tests Must Pass";
+			description = "If you are truly following test-driven development practices, then no code\n\n  is ever released until all of its unit tests pass.  If this option is set to\n\n  true, students will not receive a non-zero score or receive further\n\n  assessment feedback unless all student tests pass.  If this option is not\n\n  set, then students may continue to proceed even if some student-written\n\n  tests fail  The student's correctness/testing score is multiplied by the\n\n  proportion of their tests that pass.";
+		},
+		{
+			property = "codeCoverage";
+			type = boolean;
+			name = "Enable Code Coverage Check";
+			description = "Adds the generation of coverage data to student tests and alters the grade accordingly.";
 		},
 		{
 			property = localFiles;
@@ -62,12 +80,28 @@
 			description = "A g++-compatible library file to link with the student's code.  This lib\n\n  file will be included in the link in addition to any specified in the\n\n  reusable options section.";
 		},
 		{
-			property = "codeCoverage";
-			type = antBoolean;
-			default = true;
-			name = "Enable Code Coverage Check";
-			category = "Scoring Settings";
-			description = "Adds the generation of coverage data to student tests and alters the grade accordingly.";
+			property = "coverageCheckInstances";
+			type = boolean;
+			name = "Add Template Instances to Coverage Check";
+			description = "Template instances can count as seperate functions.";
+		},
+		{
+			property = minimumTemplateInstances;
+			type = integer;
+			name = "Minimum Template Instances";
+			description = "Decides how many instances of templates there needs to be.";
+		},
+		{
+			property = "coverageCheckRegions";
+			type = boolean;
+			name = "Add Regions to Coverage Check";
+			description = "Regions are classified as areas in curly braces.";
+		},
+		{
+			property = "coverageCheckFunctions";
+			type = boolean;
+			name = "Add Functions to Coverage Check";
+			description = "Make sure all functions are called no matter what.";
 		},
 	);
 	optionCategories = (
@@ -82,6 +116,7 @@
 			type = fileOrDir;
 			fileTypes = ();
 			name = "#Include Directory";
+			category = "C++ Settings";
 			description = "A directory of files to place on the include path while compiling the\n\n  student's code (as well as instructor reference tests).  This directory\n\n  appears later on the include path than the assignment-specific configuration\n\n  setting.  The default is to use no path.";
 		},
 		{
@@ -95,45 +130,6 @@
 			description = "A g++-compatible library file to link with the student's code.";
 		},
 		{
-			property = "allStudentTestsMustPass";
-			type = boolean;
-			default = true;
-			name = "All Student Tests Must Pass";
-			category = "Scoring Settings";
-			description = "If you are truly following test-driven development practices, then no code\n\n  is ever released until all of its unit tests pass.  If this option is set to\n\n  true, students will not receive a non-zero score or receive further\n\n  assessment feedback unless all student tests pass.  If this option is not\n\n  set, then students may continue to proceed even if some student-written\n\n  tests fail  The student's correctness/testing score is multiplied by the\n\n  proportion of their tests that pass.";
-		},
-		{
-			property = coverageMetric;
-			advanced = true;
-			type = radioChoice;
-			name = "Test Coverage Metric";
-			default = 0;
-			category = "Scoring Settings";
-			description = "Choose the criterion used to measure how thoroughly\n\n                           a student's tests cover the corresponding code.";
-			choices = (
-				{
-					label = "No coverage used";
-					value = 0;
-				},
-				{
-					label = "Methods executed";
-					value = 1;
-				},
-				{
-					label = "Methods + conditions/decisions executed";
-					value = 2;
-				},
-			);
-		},
-		{
-			property = hintsLimit;
-			type = integer;
-			default = 3;
-			name = "Hints Limit";
-			category = "Feedback Settings";
-			description = "Maximum number of hints the\n\n                           student will receive from failed reference tests.";
-		},
-		{
 			property = debug;
 			type = integer;
 			advanced = true;
@@ -144,7 +140,7 @@
 		},
 		{
 			property = doNotDelete;
-			type = antBoolean;
+			type = boolean;
 			advanced = true;
 			name = "Preserve Derived Files";
 			category = "Script Developer";

@@ -1,3 +1,7 @@
 cxxtest/*
-cxxtest-4.4/*
+cxxtest*/*
 *.zip
+.idea/*
+.DS_Store
+__pycache__/*
+.vscode/*

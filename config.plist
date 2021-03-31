@@ -89,7 +89,7 @@
 			property = minimumTemplateInstances;
 			type = integer;
 			name = "Minimum Template Instances";
-			description = "Decides how many instances of templates there needs to be.";
+			description = "Decides how many instances of templates there needs to be. Requires Code Coverage to be turned on.";
 		},
 		{
 			property = "coverageCheckRegions";
@@ -102,6 +102,12 @@
 			type = boolean;
 			name = "Add Functions to Coverage Check";
 			description = "Make sure all functions are called no matter what.";
+		},
+		{
+			property = "noLoops";
+			type = boolean;
+			name = "Enables No-Loop Check";
+			description = "Adds the generation of coverage data to student tests and alters the grade accordingly.";
 		},
 	);
 	optionCategories = (

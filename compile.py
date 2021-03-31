@@ -19,8 +19,12 @@ def getCompilerArgs(test_type, config : dict):
     assignment_lib          = config.get('assignmentLib', False)
     general_lib             = config.get('generalLib', False)
 
+    args = []
     # Add default args.
-    args = ['-O0','-g3','-Wall','-fnon-call-exceptions','-finstrument-functions']
+    if test_type != 'tool':
+        args = ['-O0','-g3','-Wall','-fnon-call-exceptions','-finstrument-functions']
+    else:
+        args = ['--', 'clang++-8', '-x', 'c++']
     arg_log += 'Using default compilation arguments: ' + ' '.join(args) + '\n'
 
     # If code coverage is needed, add necessary args.
@@ -43,8 +47,12 @@ def getCompilerArgs(test_type, config : dict):
     arg_log += 'Adding platform specific arguments.\n'
 
     # Include cxxtest and stdc++
-    args += ['-I' + cxxtest_dir,'-I' + basedir,'-lstdc++']
+    args += ['-I' + cxxtest_dir,'-I' + basedir]
     arg_log += 'Adding default include directories: cxxtest and basedir.\n'
+    if test_type != 'tool':
+        args += ['-lstdc++']
+    else:
+        args += ['-I/usr/include/x86_64-linux-gnu/c++/5/','-I/usr/include/c++/5/', '-I/usr/lib/gcc/x86_64-linux-gnu/5/include']
     arg_log += 'Adding stdc++ as a library.\n'
 
     # If additional includes exit for this assignment, 
@@ -85,18 +93,25 @@ def getCompilerArgs(test_type, config : dict):
         instructor_tests        = config['instructor.tests']
         args += ['-o', instructor_tests]
 
+    files = []
 
-    # Files need to be added, all cpp files first.
-    files = find(basedir + '/*.cpp')
-    # Then the o files in the plugin to prevent
-    # system calls.
-    files += find(script_home + '/obj/*.o')
-    # Finally use the correct tests.
     if test_type == 'student':
+        # Files need to be added, all cpp files first.
+        files = find(basedir + '/*.cpp')
+        # Then the o files in the plugin to prevent
+        # system calls.
+        files += find(script_home + '/obj/*.o')
+        # Finally use the correct tests.
         files += [build + '/runStudentTests.cpp']
     elif test_type == 'instructor':
+        # Files need to be added, all cpp files first.
+        files = find(basedir + '/*.cpp')
+        # Then the o files in the plugin to prevent
+        # system calls.
+        files += find(script_home + '/obj/*.o')
+        # Finally use the correct tests.
         files += [build + '/runInstructorTests.cpp']
-    
+
     arg_log += '\n'
     args += files
 

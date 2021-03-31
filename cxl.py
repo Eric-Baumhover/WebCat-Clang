@@ -114,5 +114,7 @@ def gradeStyle(config, pathName, script, resultDir):
     ## (`rm -R temp/ && rm scriptRaw.txt && rm $resultDir/1-stdout.txt`);
     ##-------------------------------------------------------------
     
+    print('Style Score: ' + str(actualScore))
+
     return actualScore
     #--------------------------------------------------------------

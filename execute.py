@@ -22,17 +22,23 @@ config['cxxtest.dir']       = config['scriptHome'] + '/cxxtest-4.4'
 config['basedir']           = config['workingDir']
 config['mac'] = False
 config['numReports'] = 0
+config['numCodeMarkups'] = 0
+
+add_coverage_report = False
 
 grade_report = ''
 
 try:
+
     #Copy data files into directory.
     if config.get('localFiles', False):
         lf_path = os.path.join(config['scriptData'],config['localFiles'])
         if os.path.isdir(lf_path):
-            shutil.copytree(lf_path, config['basedir'])
+            for data_file in os.listdir(lf_path):
+                shutil.copy(os.path.join(lf_path,data_file), config['basedir'] + "/" + data_file)
         else:
-            shutil.copy(lf_path, config['basedir'])
+            base_path = os.path.basename(os.path.normpath(lf_path))
+            shutil.copy(lf_path, config['basedir'] + base_path)
 
     print(os.popen('chmod +x ' + config['cxxtest.dir'] + '/bin/cxxtestgen').read())
     print(os.popen('chmod +x ' + config['scriptHome'] + '/bin/no-loops').read())
@@ -69,8 +75,8 @@ try:
             print(test_log)
 
             # Find the number of tests.
-            cases_match = re.match('(?:Running cxxtest tests \((\d+) tests\)){0,1}',test_log)
-            
+            cases_match = re.match('(?:Running cxxtest tests \((\d+) test){0,1}',test_log)
+
             # Check for failed match.
             if cases_match is None:
                 print('No cases found by RegEx')
@@ -112,7 +118,7 @@ try:
                 grade_report += 'Your tests passed, nice.\n'
             
             # Run minimum tests check.
-            minimum_tests = int(config['minimumTestCases'])
+            minimum_tests = int(config.get('minimumTestCases', 0))
             if test_cases < minimum_tests and minimum_tests != 0:
                 print('Not enough tests')
                 coefficient = test_cases / minimum_tests
@@ -128,15 +134,15 @@ try:
                 if config.get('codeCoverage', 'false') != 'false':
 
                     # Execution is contained in this function. (in code_coverage.py)
-                    runCodeCoverage(config)
+                    add_coverage_report = runCodeCoverage(config) == 0
 
                     # Decide what to grade.
-                    functions   = bool(config['coverageCheckFunctions'])
-                    inst        = bool(config['coverageCheckInstances'])
-                    regions     = bool(config['coverageCheckRegions'])
+                    lines       = config.get('coverageCheckLines',     'false') != 'false'
+                    inst        = config.get('coverageCheckInstances', 'false') != 'false'
+                    regions     = config.get('coverageCheckRegions',   'false') != 'false'
                     
                     # Run grader. (in grade_coverage.py)
-                    result, templates = gradeCoverage(config['resultDir'] + '/coverageData.json', functions, inst, True, regions)
+                    result, templates = gradeCoverage(config['resultDir'] + '/coverageData.json', True, inst, lines, regions)
                     if not result:
                         # Give a zero for failed coverage.
                         print('Bad code coverage')
@@ -252,6 +258,9 @@ try:
     config['score.correctness'] = score_correctness
     config['score.tools']       = score_tools
 
+    if config.get('doNotDelete', 'true') == 'false':
+        shutil.rmtree(config['build'])
+
 except:
     print("Unexpected error: ", sys.exc_info())
     config['score.correctness'] = 0.0
@@ -265,6 +274,13 @@ try:
     WebCat.addReport(config,'grade_report.html','Grade Report', grade_report)
 except:
     print("Unexpected error writing grade report: ", str(sys.exc_info()))
+
+
+if add_coverage_report:
+    cov_data = ''
+    with open(config['resultDir']+'/coverageReport.html', 'r') as file_data:
+        cov_data = file_data.read()
+    WebCat.addReport(config, 'coverageReport.html', 'Coverage Data', cov_data)
 
 # This is necessary for the whole thing to work, this finalizes the output.
 WebCat.exportConfig(config_file_name, config)

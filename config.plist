@@ -80,34 +80,34 @@
 			description = "A g++-compatible library file to link with the student's code.  This lib\n\n  file will be included in the link in addition to any specified in the\n\n  reusable options section.";
 		},
 		{
-			property = "coverageCheckInstances";
-			type = boolean;
-			name = "Add Template Instances to Coverage Check";
-			description = "Template instances can count as seperate functions.";
-		},
-		{
 			property = minimumTemplateInstances;
 			type = integer;
 			name = "Minimum Template Instances";
-			description = "Decides how many instances of templates there needs to be. Requires Code Coverage to be turned on.";
+			description = "Requires Code Coverage Check. Uses the ratio of function instances covered to the functions covered to determine how many instances of template classes were used in student tests. This is a rough approximation.";
+		},
+		{
+			property = "coverageCheckInstances";
+			type = boolean;
+			name = "Add Template Instances to Coverage Check";
+			description = "Requires Code Coverage Check. Template instances can count as seperate functions. Not required for Minimum Template Instances";
 		},
 		{
 			property = "coverageCheckRegions";
 			type = boolean;
 			name = "Add Regions to Coverage Check";
-			description = "Regions are classified as areas in curly braces.";
+			description = "Requires Code Coverage Check. Regions are classified as areas in curly braces.";
 		},
 		{
-			property = "coverageCheckFunctions";
+			property = "coverageCheckLines";
 			type = boolean;
-			name = "Add Functions to Coverage Check";
-			description = "Make sure all functions are called no matter what.";
+			name = "Add Lines to Coverage Check";
+			description = "Requires Code Coverage Check. Make sure all lines are covered no matter what.";
 		},
 		{
 			property = "noLoops";
 			type = boolean;
 			name = "Enables No-Loop Check";
-			description = "Adds the generation of coverage data to student tests and alters the grade accordingly.";
+			description = "Run a ClangLibtooling program designed to find loops. Useful for recursion problems.";
 		},
 	);
 	optionCategories = (
@@ -134,15 +134,6 @@
 			name = "Static Linking Library";
 			category = "C++ Settings";
 			description = "A g++-compatible library file to link with the student's code.";
-		},
-		{
-			property = debug;
-			type = integer;
-			advanced = true;
-			default = 5;
-			name = "Debug Level";
-			category = "Script Developer";
-			description = "Set to a non-zero value for the script to produce debugging output (the\n\n  larger the number, the greater the detail, up to about 5).  Debugging output\n\n  on each grading script run will be e-mailed to the instructor.";
 		},
 		{
 			property = doNotDelete;

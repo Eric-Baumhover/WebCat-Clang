@@ -59,12 +59,12 @@ def getCompilerArgs(test_type, config : dict):
     # add them.
     if assignment_includes:
         arg_log += "Assignment Includes exist, adding.\n"
-        args += ['-I' + assignment_includes]
+        args += ['-I' + os.path.join(config['scriptData'],assignment_includes)]
 
     # Other includes.
     if general_includes:
         arg_log += "General Includes exist, adding.\n"
-        args += ['-I' + general_includes]
+        args += ['-I' + os.path.join(config['scriptData'],general_includes)]
 
     # Similar to the includes, but with libraries this time.
     assignment_lib_valid    = assignment_lib != False
@@ -76,11 +76,11 @@ def getCompilerArgs(test_type, config : dict):
 
         if assignment_lib_valid:
             arg_log += "Assignment Library exists, adding.\n"
-            args += ['-L' + assignment_lib]
+            args += ['-L' + os.path.join(config['scriptData'],assignment_lib)]
         
         if general_lib_valid:
             arg_log += "General Library exists, adding.\n"
-            args += ['-L' + general_lib]
+            args += ['-L' + os.path.join(config['scriptData'],general_lib)]
         
         args += ['--end-group']
 

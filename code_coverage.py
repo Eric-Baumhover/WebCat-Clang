@@ -1,6 +1,7 @@
-import os, glob, sys
+import os, glob, sys, subprocess, re
 from glob import glob as find
 import webcat as WebCat
+from time import sleep
 
 def runCodeCoverage(config):
     #TODO: Add fail checks
@@ -19,7 +20,8 @@ def runCodeCoverage(config):
 
     # Get a list of the origin sources, 
     # needed to narrow coverage data.
-    sources = ' '.join(find(basedir + '/*.cpp') + find(basedir + '/*.h'))
+    source_args = find(basedir + '/*.cpp') + find(basedir + '/*.h')
+    sources = ' '.join(source_args)
 
     # Convert data into a per file summarized json version.
     print('Running command: ' + 'llvm-cov-8 export ' + '-summary-only -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources)
@@ -34,8 +36,10 @@ def runCodeCoverage(config):
     # Output a human readable report of the data.
     # List only areas that were never called.
     # Use a demangler to make it more readable.
-    print('Running command: ' + 'llvm-cov-8 show ' + '-region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources)
-    cov_report = os.popen('llvm-cov-8 show ' + '-Xdemangler c++filt -Xdemangler -n -region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
+    base_args = ['llvm-cov-8','show', '-format=text','-Xdemangler','c++filt','-Xdemangler','-n','-show-line-counts-or-regions','-instr-profile',build+'/runStudentTests.profdata',student_tests]
+    #cov_report = os.popen('llvm-cov-8 show ' + '-format=html -Xdemangler c++filt -Xdemangler -n -region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
 
-    # Add this coverage report to reports in webcat
-    WebCat.addReport(config, 'coverageReport.html', 'Code Not Covered', cov_report)
+    with open(result_dir + '/coverageReport.html', 'w') as file_data:
+        markup_process = subprocess.Popen(base_args + source_args, stdout=file_data, stderr=subprocess.STDOUT, universal_newlines=True)
+        markup_code = markup_process.wait()
+        return markup_code

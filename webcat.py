@@ -44,26 +44,20 @@ def addReport(config, report_file_name, title, data):
 
     file_data.write('<div class="shadow"><table><tbody><tr><th>' + title + '</th></tr><tr><td>')
 
-    max_length = 75
-
+    file_data.write('<div style="overflow: scroll; max-width: 60vw; max-height: 25vw;">')
+    
     for line in data.split('\n'):
-        length = len(line)
-        more = False
-        while True:
-            file_data.write('<pre>' + line[0:(length if length <= max_length else max_length)] + '</pre>')
-            if length > max_length:
-                line = line[max_length:]
-                length -= max_length
-                more = True
-            else:
-                if more:
-                    file_data.write('<br>')
-                break
+        file_data.write('<pre>' + line + '</pre>')
+
+    file_data.write('</div>')
 
     file_data.write('</td></tr></tbody></table></div><div class="spacer">&nbsp;</div>')
 
     file_data.close()
 
+    addExistingReport(config, report_file_name)
+
+def addExistingReport(config, report_file_name):
     reportNum = config['numReports'] + 1
     config['numReports'] = reportNum
     report = 'report' + str(reportNum)

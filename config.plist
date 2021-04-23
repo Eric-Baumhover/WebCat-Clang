@@ -136,6 +136,29 @@
 			description = "A g++-compatible library file to link with the student's code.";
 		},
 		{
+			property = cxxVersion;
+			advanced = true;
+			type = radioChoice;
+			name = "C++ Language Version";
+			default = 0;
+			category = "C++ Settings";
+			description = "Decide the version of C++ used.";
+			choices = (
+				{
+					label = "C++ 1998";
+					value = 0;
+				},
+				{
+					label = "C++ 2011";
+					value = 1;
+				},
+				{
+					label = "C++ 2014";
+					value = 2;
+				},
+			);
+		},
+		{
 			property = doNotDelete;
 			type = boolean;
 			advanced = true;
@@ -143,5 +166,6 @@
 			category = "Script Developer";
 			description = "Set to true to prevent the plug-in from deleting the derived files it\n\n  creates during the build/test process for each submission.  Normally, these\n\n  files are deleted when a given submission has been completely processed.\n\n  This setting is provided for debugging purposes, when one wishes to\n\n  inspect the intermediate test driver source code or other derived files.";
 		},
+		
 	);
 }

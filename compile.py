@@ -27,6 +27,17 @@ def getCompilerArgs(test_type, config : dict):
         args = ['--', 'clang++-8', '-x', 'c++']
     arg_log += 'Using default compilation arguments: ' + ' '.join(args) + '\n'
 
+    versionNum = int(config.get('cxxVersion', '0'))
+
+    if versionNum == 0:
+        args += ['-std=c++98']
+        arg_log += 'Using C++98\n'
+    elif versionNum == 1:
+        args += ['-std=c++11']
+        arg_log += 'Using C++11\n'
+    elif versionNum == 2:
+        args += ['-std=c++14']
+        arg_log += 'Using C++14\n'
     # If code coverage is needed, add necessary args.
     # For context on the comparison with code coverage,
     # if there is no value for an ant variable, 

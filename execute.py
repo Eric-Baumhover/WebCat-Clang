@@ -135,29 +135,34 @@ try:
 
                     # Execution is contained in this function. (in code_coverage.py)
                     add_coverage_report = runCodeCoverage(config) == 0
+                    if add_coverage_report:
 
-                    # Decide what to grade.
-                    lines       = config.get('coverageCheckLines',     'false') != 'false'
-                    inst        = config.get('coverageCheckInstances', 'false') != 'false'
-                    regions     = config.get('coverageCheckRegions',   'false') != 'false'
-                    
-                    # Run grader. (in grade_coverage.py)
-                    result, templates = gradeCoverage(config['resultDir'] + '/coverageData.json', True, inst, lines, regions)
-                    if not result:
-                        # Give a zero for failed coverage.
-                        print('Bad code coverage')
-                        grade_report += 'Not all code covered: Tools Score = 0.0\n'
-                        score_tools = 0.0
+                        # Decide what to grade.
+                        lines       = config.get('coverageCheckLines',     'false') != 'false'
+                        inst        = config.get('coverageCheckInstances', 'false') != 'false'
+                        regions     = config.get('coverageCheckRegions',   'false') != 'false'
+                        
+                        # Run grader. (in grade_coverage.py)
+                        result, templates = gradeCoverage(config['resultDir'] + '/coverageData.json', True, inst, lines, regions)
+                        if not result:
+                            # Give a zero for failed coverage.
+                            print('Bad code coverage')
+                            grade_report += 'Not all code covered: Tools Score = 0.0\n'
+                            score_tools = 0.0
+                        else:
+                            grade_report += 'You have perfect coverage, nice.\n'
+                        # Grab minimum templates needed.
+                        # This acts as a ratio. FunctionInstances / Functions is a rough approximation of template coverage.
+                        min_templates = int(config.get('minimumTemplateInstances', 0))
+                        if math.ceil(templates) < min_templates:
+                            coefficient = math.ceil(templates) / min_templates
+                            grade_report += 'Did not reach minimum ratio of covered templates "' + str(min_templates) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                            score_correctness *= coefficient
+                            print('Not enough template instances.')
                     else:
-                        grade_report += 'You have perfect coverage, nice.\n'
-                    # Grab minimum templates needed.
-                    # This acts as a ratio. FunctionInstances / Functions is a rough approximation of template coverage.
-                    min_templates = int(config.get('minimumTemplateInstances', 0))
-                    if math.ceil(templates) < min_templates:
-                        coefficient = math.ceil(templates) / min_templates
-                        grade_report += 'Did not reach minimum ratio of covered templates "' + str(min_templates) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
-                        score_correctness *= coefficient
-                        print('Not enough template instances.')
+                        print("Unexpected error running code coverage: ")
+                        grade_report += 'Error In Code Coverage Generation Block...\n'
+                        score_tools = 0.0
             except:
                 print("Unexpected error running code coverage: ", str(sys.exc_info()))
                 grade_report += 'Fatal Error In Code Coverage Test Block...\n'
@@ -229,7 +234,12 @@ try:
 #=============================================================================================================================================================================================
 #              No-Loops Test Block
 #=============================================================================================================================================================================================
-                loop_command = [config['scriptHome'] + '/bin/no-loops'] + find('*.h') + find('*.cpp') + getCompilerArgs('tool', config)[0]
+                basedir = config['basedir']
+                source_files = find(basedir + '/*.cpp') + find(basedir + '/*.h')
+                test_files = find(basedir + '/*test.h') + find(basedir + '/*Test.h')
+                source_args = list(set(source_files).difference(test_files))
+                
+                loop_command = [config['scriptHome'] + '/bin/no-loops'] + source_args + getCompilerArgs('tool', config)[0]
                 print('Running no-loops: ' + ' '.join(loop_command))
                 loop_process = subprocess.Popen(loop_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
                 loop_process.wait()
@@ -277,10 +287,7 @@ except:
 
 
 if add_coverage_report:
-    cov_data = ''
-    with open(config['resultDir']+'/coverageReport.html', 'r') as file_data:
-        cov_data = file_data.read()
-    WebCat.addReport(config, 'coverageReport.html', 'Coverage Data', cov_data)
+    WebCat.addExistingReport(config, 'coverageReport.html')
 
 # This is necessary for the whole thing to work, this finalizes the output.
 WebCat.exportConfig(config_file_name, config)

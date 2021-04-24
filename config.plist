@@ -109,11 +109,15 @@
 			name = "Enables No-Loop Check";
 			description = "Run a ClangLibtooling program designed to find loops. Useful for recursion problems.";
 		},
+		{
+			property = "debugReports";
+			type = boolean;
+			name = "Show Debug Reports";
+			description = "Add additional reports for debugging.";
+		},
 	);
 	optionCategories = (
 		"C++ Settings",
-		"Scoring Settings",
-		"Feedback Settings",
 		"Script Developer",
 	);
 	options = (

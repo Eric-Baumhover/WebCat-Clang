@@ -47,7 +47,7 @@ def addReport(config, report_file_name, title, data):
     file_data.write('<div style="overflow: scroll; max-width: 60vw; max-height: 25vw;">')
     
     for line in data.split('\n'):
-        file_data.write('<pre>' + line + '</pre>')
+        file_data.write('<pre style="display: inline; margine: 0;">' + line + '<br></pre>')
 
     file_data.write('</div>')
 
@@ -63,3 +63,21 @@ def addExistingReport(config, report_file_name):
     report = 'report' + str(reportNum)
     config[report + '.file'] = report_file_name
     config[report + '.mimeType'] = 'text/html'
+
+def commandReport(command, config, report_file_name_prefix, title_prefix, combine=False, debug=False):
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr= subprocess.STDOUT if combine else subprocess.PIPE, universal_newlines=True)
+    process.wait()
+    # Get the return code and logs.
+    code = process.returncode
+    log, error = process.communicate()
+
+    if not (debug and not config.get('debugReports','false') != 'false'):
+        addReport(config, report_file_name_prefix if combine else report_file_name_prefix + '_log', title_prefix if combine else report_file_name_prefix + ' Log', log)
+        if not combine:
+            addReport(config, report_file_name_prefix + '_error', title_prefix + ' Error', error)
+    else:
+        print(log)
+        if not combine:
+            print(error)
+    return code

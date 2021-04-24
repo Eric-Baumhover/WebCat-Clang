@@ -2,6 +2,7 @@ import os, glob, sys, subprocess, re
 from glob import glob as find
 import webcat as WebCat
 from time import sleep
+import fnmatch
 
 def runCodeCoverage(config):
     #TODO: Add fail checks
@@ -15,31 +16,66 @@ def runCodeCoverage(config):
     # Run llvm-profdata merge in order to obtain 
     # code coverage data from a profraw file 
     # generated earlier.
-    print('Running command: ' + 'llvm-profdata-8 merge -sparse ' + build + '/runStudentTests.profraw -o ' + build + '/runStudentTests.profdata')
-    print(os.popen('llvm-profdata-8 merge -sparse ' + build + '/runStudentTests.profraw -o ' + build + '/runStudentTests.profdata').read())
 
-    # Get a list of the origin sources, 
+    profdata_command = ['llvm-profdata-8','merge','-sparse', build + '/runStudentTests.profraw','-o', build + '/runStudentTests.profdata']
+
+    print('Running command: ' + ' '.join(profdata_command))
+    code = WebCat.commandReport(profdata_command, config, 'llvm-profdata-log.html', 'LLVM-PROFDATA-8 Debug Log', True, True)
+    if code != 0:
+        print('Error in LLVM-PROFDATA command!')
+        return code
+
+
+    # Get a list of the original sources, 
     # needed to narrow coverage data.
-    source_args = find(basedir + '/*.cpp') + find(basedir + '/*.h')
-    sources = ' '.join(source_args)
+    source_files = find(basedir + '/*.cpp') + find(basedir + '/*.h')
+    test_files = find(basedir + '/*test.h') + find(basedir + '/*Test.h')
+    source_args = list(set(source_files).difference(test_files))
 
-    # Convert data into a per file summarized json version.
-    print('Running command: ' + 'llvm-cov-8 export ' + '-summary-only -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources)
-    cov_data = os.popen('llvm-cov-8 export ' + '-summary-only -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
+    print('Files for code coverage: ' + ' '.join(source_args))
+    print()
 
-    # Save this data to a file for later.
-    print('Saving to file: ' + result_dir + '/coverageData.json')
-    file_data = open(result_dir + '/coverageData.json', 'w')
-    file_data.write(cov_data)
-    file_data.close()
+    if len(source_args) > 0:
 
-    # Output a human readable report of the data.
-    # List only areas that were never called.
-    # Use a demangler to make it more readable.
-    base_args = ['llvm-cov-8','show', '-format=text','-Xdemangler','c++filt','-Xdemangler','-n','-show-line-counts-or-regions','-instr-profile',build+'/runStudentTests.profdata',student_tests]
-    #cov_report = os.popen('llvm-cov-8 show ' + '-format=html -Xdemangler c++filt -Xdemangler -n -region-coverage-lt=1 -show-line-counts-or-regions -instr-profile ' + build + '/runStudentTests.profdata ' + student_tests + ' ' + sources).read()
+        sources = ' '.join(source_args)
 
-    with open(result_dir + '/coverageReport.html', 'w') as file_data:
-        markup_process = subprocess.Popen(base_args + source_args, stdout=file_data, stderr=subprocess.STDOUT, universal_newlines=True)
-        markup_code = markup_process.wait()
-        return markup_code
+
+        # Convert data into a per file summarized json version.
+        json_export_command = ['llvm-cov-8','export','-summary-only','-instr-profile',build + '/runStudentTests.profdata',student_tests]
+        print('Running command: ' + ' '.join(json_export_command+source_args))
+        export_error = ''
+        with open(result_dir + '/coverageData.json', 'w') as file_data:
+            process = subprocess.Popen(json_export_command + source_args, stdout=file_data, stderr=subprocess.PIPE, universal_newlines=True)
+            code = process.wait()
+            log, export_error = process.communicate()
+        if code != 0:
+            print('Error in LLVM-COV Export')
+            print(export_error)
+            return code
+        
+        file_data.close()
+        
+        print()
+
+        # Output a human readable report of the data.
+        # List only areas that were never called.
+        # Use a demangler to make it more readable.
+        base_args = ['llvm-cov-8','show', '-format=html','-Xdemangler','c++filt','-Xdemangler','-n','-show-line-counts-or-regions','-instr-profile',build+'/runStudentTests.profdata',student_tests]
+        print('Running command: ' + ' '.join(base_args+source_args))
+        with open(result_dir + '/coverageReport.html', 'w') as file_data:
+            markup_process = subprocess.Popen(base_args + source_args, stdout=file_data, stderr=subprocess.STDOUT, universal_newlines=True)
+            code = markup_process.wait()
+
+        lines = []
+        with open(result_dir + '/coverageReport.html', 'r') as file_data:
+            lines = file_data.readlines()
+
+        lines = ['<div class="shadow"><table><tbody><tr><th>Code Coverage Data</th></tr><tr><td><div style="overflow: scroll; max-width: 60vw; max-height: 25vw;">'] + lines + ['</div></td></tr></tbody></table></div><div class="spacer">&nbsp;</div>']
+        
+        with open(result_dir + '/coverageReport.html', 'w') as file_data:
+            file_data.writelines(lines)
+        return code
+        
+    else:
+        print('No non test files.')
+        return 1

@@ -110,6 +110,12 @@
 			description = "Run a ClangLibtooling program designed to find loops. Useful for recursion problems.";
 		},
 		{
+			property = "noIndexing";
+			type = boolean;
+			name = "Enables No Array Indexing Check";
+			description = "Run a ClangLibtooling program designed to find array indexing operations. Useful for pointer arithmetic problems.";
+		},
+		{
 			property = "debugReports";
 			type = boolean;
 			name = "Show Debug Reports";

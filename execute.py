@@ -1,4 +1,8 @@
+# Generic Python imports
 import os, sys, subprocess, re, math, shutil
+from glob import glob as find
+
+# Other files in plugin.
 from testgen import create_tests
 from compile import compile
 from compile import getCompilerArgs
@@ -6,33 +10,43 @@ from code_coverage import runCodeCoverage
 from cxl import gradeStyle
 import webcat as WebCat
 from grade_coverage import gradeCoverage
-from glob import glob as find
 
 
+# Important part of any WebCAT plugin. This is the file that must be read from and written to. This is how grading is finalized.
 config_file_name = sys.argv[1]
 
 # This is necessary for the whole thing to work, this takes in all the data.
 config = WebCat.importConfig(config_file_name)
 
-# Set up some necessary
+# Set up some necessary values in the config that most things use.
+# Build is the "Temporary" directory for intermediate files.
 config['build']             = config['resultDir'] + '/bin'
+# StudentTests is the executable made from student code and tests.
 config['student.tests']     = config['build'] + '/runStudentTests.exe'
+# InstructorTests is the executable made from instructor tests and student code.
 config['instructor.tests']  = config['build'] + '/runInstructorTests.exe'
-config['cxxtest.dir']       = config['scriptHome'] + '/cxxtest-4.4'
+# CXXTESTDir is the directory containing the cxxtest 4 library and executables.
+config['cxxtest.dir']       = config['scriptHome'] + '/cxxtest'
+# Basedir is the folder with student code.
 config['basedir']           = config['workingDir']
+# Mac messes with some command line arguments, no implementation exists other than that. Carry over from CXL.
 config['mac'] = False
+# Initialization of counters for reports.
 config['numReports'] = 0
 config['numCodeMarkups'] = 0
 
+# Variable for later. Determines if there exists a coverage report to put at the end.
 add_coverage_report = False
 
+# Variable storing the message to the student explaining their grade.
 grade_report = ''
 
 try:
-
     #Copy data files into directory.
     if config.get('localFiles', False):
+        # Determine the path of the data files.
         lf_path = os.path.join(config['scriptData'],config['localFiles'])
+        # If its a directory loop, otherwise use just that file.
         if os.path.isdir(lf_path):
             for data_file in os.listdir(lf_path):
                 shutil.copy(os.path.join(lf_path,data_file), config['basedir'] + "/" + data_file)
@@ -40,14 +54,18 @@ try:
             base_path = os.path.basename(os.path.normpath(lf_path))
             shutil.copy(lf_path, config['basedir'] + base_path)
 
+    # Ensure executables are actually executable using a chmod call. Stable. If this breaks it will kill the grading completely.
     print(os.popen('chmod +x ' + config['cxxtest.dir'] + '/bin/cxxtestgen').read())
     print(os.popen('chmod +x ' + config['scriptHome'] + '/bin/no-loops').read())
     print(os.popen('chmod +x ' + config['scriptHome'] + '/bin/no-indexing').read())
 
+    # Make sure the temporary directory exists.
     os.mkdir(config['build'])
 
+    # Should run instructor tests and other tools.
     student_successful = True
 
+    # Initalize scores.
     config['score.correctness'] = 0.0
     config['score.tools'] = 0.0
     score_correctness = float(config['max.score.correctness'])
@@ -196,13 +214,14 @@ try:
                 # Compile the instructor code and get the result
                 compile_return = compile('instructor', config)
                 if compile_return == 0:
-
+                    # Run the instructor's executable.
                     test_process = subprocess.Popen([config['instructor.tests']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                     test_process.wait()
 
                     test_code = test_process.returncode
                     test_log, test_error = test_process.communicate()
 
+                    # Report to WebCAT. If there is an error give a 0.
                     WebCat.addReport(config,'instructor_test_log.html','Log from Instructor Tests', test_log)
                     if test_code != 0:
                         grade_report += 'Not all instructor tests passed: Correctness Score = 0.0\n'
@@ -221,9 +240,11 @@ try:
             score_correctness = 0.0
 #=============================================================================================================================================================================================
         
-
+        # Run style grader.
         style_score = gradeStyle(config, config['basedir'], config['scriptHome'] + '/cpplint.py', config['resultDir'])
+        # If there are problems with style, report and grade accordingly.
         if style_score < 10:
+            # Ten is the max style score.
             coefficient = style_score / 10.0
             grade_report += 'Did not have perfect style score, you got "' + str(style_score) + '": Tools Points Lost = ' + "%.1f" % (score_tools * (1.0 - coefficient)) + '\n'
             score_tools *= coefficient
@@ -231,83 +252,91 @@ try:
             grade_report += 'Perfect style, nice.\n'
 
         basedir = config['basedir']
+        
+        # Precalculate files to compile for libtooling.
         source_files = find(basedir + '/*.cpp') + find(basedir + '/*.h')
         test_files = find(basedir + '/*test.h') + find(basedir + '/*Test.h')
         source_args = list(set(source_files).difference(test_files))
 
-        if len(source_args) != 0 and (config.get('noLoops', 'false') != 'false' or config.get('noIndexing', 'false') != 'false'):
-            try:
-                if config.get('noLoops', 'false') != 'false':
-#=============================================================================================================================================================================================
-#              No-Loops Test Block
-#=============================================================================================================================================================================================
-                
-                    loop_command = [config['scriptHome'] + '/bin/no-loops'] + source_args + getCompilerArgs('tool', config)[0]
-                    print('Running no-loops: ' + ' '.join(loop_command))
-                    loop_process = subprocess.Popen(loop_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
-                    loop_process.wait()
-                    loop_code = loop_process.returncode
-                    loop_log, loop_error = loop_process.communicate()
+        # Check to make sure that libtooling is necessary.
+        if (config.get('noLoops', 'false') != 'false' or config.get('noIndexing', 'false') != 'false'):
 
-                    # Check for no output. If that fails there was a result.
-                    if re.match('(^[\s\n]{0,}$)', loop_log) is None:
-                        score_tools = 0.0
-                        grade_report += 'Found loops: Tools Score = 0.0\n'
-                        WebCat.addReport(config,'no-loops_test_log.html','Fail Log from No-Loop Tests', loop_log)
-                    else:
-                        grade_report += 'No loops found. Good work!\n'
-                        print('No loops found. Good work!')
-                    if re.match('(^[\s\n]{0,}$)', loop_error) is None:
-                        print('Errors running no-loops!')
-                        print(loop_error)
-                        # Oh boy a no-loops error. Doesn't effect grade.
-                        WebCat.addReport(config,'no-loops_test_error.html','No-Loop Error', 'There was an error with the no-loops check.\nThis won\'t effect your grade, tell your professor though.')
-                    
-            except:
-                print("Unexpected error inside no-loops call: ", str(sys.exc_info()))
-                grade_report += 'Fatal Error In No-Loops Block...\n'
+            # Make sure there is something to run the tools on.
+            if len(source_args) != 0:
+                try:
+                    if config.get('noLoops', 'false') != 'false':
+    #=============================================================================================================================================================================================
+    #              No-Loops Test Block
+    #=============================================================================================================================================================================================
+                        # Run the tool.
+                        loop_command = [config['scriptHome'] + '/bin/no-loops'] + source_args + getCompilerArgs('tool', config)[0]
+                        print('Running no-loops: ' + ' '.join(loop_command))
+                        loop_process = subprocess.Popen(loop_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
+                        loop_process.wait()
+                        loop_code = loop_process.returncode
+                        loop_log, loop_error = loop_process.communicate()
+
+                        # Check for no output. If that fails there was a result.
+                        if re.match('(^[\s\n]{0,}$)', loop_log) is None:
+                            score_tools = 0.0
+                            grade_report += 'Found loops: Tools Score = 0.0\n'
+                            WebCat.addReport(config,'no-loops_test_log.html','Fail Log from No-Loop Tests', loop_log)
+                        else:
+                            grade_report += 'No loops found. Good work!\n'
+                            print('No loops found. Good work!')
+                        if re.match('(^[\s\n]{0,}$)', loop_error) is None:
+                            print('Errors running no-loops!')
+                            print(loop_error)
+                            # Oh boy a no-loops error. Doesn't effect grade.
+                            WebCat.addReport(config,'no-loops_test_error.html','No-Loop Error', 'There was an error with the no-loops check.\nThis won\'t effect your grade, tell your professor though.')
+                        
+                except:
+                    print("Unexpected error inside no-loops call: ", str(sys.exc_info()))
+                    grade_report += 'Fatal Error In No-Loops Block...\n'
+                    score_tools = 0.0
+
+                try:
+                    if config.get('noIndexing', 'false') != 'false':
+    #=============================================================================================================================================================================================
+    #              No-Indexing Test Block
+    #=============================================================================================================================================================================================
+                        # Run the tool.
+                        indexing_command = [config['scriptHome'] + '/bin/no-indexing'] + source_args + getCompilerArgs('tool', config)[0]
+                        print('Running no-indexing: ' + ' '.join(indexing_command))
+                        index_process = subprocess.Popen(indexing_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
+                        index_process.wait()
+                        index_code = index_process.returncode
+                        index_log, index_error = index_process.communicate()
+
+                        # Check for no output. If that fails there was a result.
+                        if re.match('(^[\s\n]{0,}$)', index_log) is None:
+                            score_tools = 0.0
+                            grade_report += 'Found index operation: Tools Score = 0.0\n'
+                            WebCat.addReport(config,'no-indexing_test_log.html','Fail Log from No-Indexing Tests', index_log)
+                        else:
+                            grade_report += 'No array indexing operations found. Good work!\n'
+                            print('No array indexing operations found. Good work!')
+                        if re.match('(^[\s\n]{0,}$)', index_error) is None:
+                            print('Errors running no-indexing!')
+                            print(index_error)
+                            # Oh boy a no-indexing error. Doesn't effect grade.
+                            WebCat.addReport(config,'no-indexing_test_error.html','No-Indexing Error', 'There was an error with the no-indexing check.\nThis won\'t effect your grade, tell your professor though.')
+                        
+                except:
+                    print("Unexpected error inside no-indexing call: ", str(sys.exc_info()))
+                    grade_report += 'Fatal Error In No-Indexing Block...\n'
+                    score_tools = 0.0
+            else:
+                grade_report += 'No non test files found. Non test files must exist. Score = 0\n'
+                print('No non test files found.')
                 score_tools = 0.0
-
-            try:
-                if config.get('noIndexing', 'false') != 'false':
+                score_correctness = 0.0
 #=============================================================================================================================================================================================
-#              No-Indexing Test Block
-#=============================================================================================================================================================================================
-                
-                    indexing_command = [config['scriptHome'] + '/bin/no-indexing'] + source_args + getCompilerArgs('tool', config)[0]
-                    print('Running no-indexing: ' + ' '.join(indexing_command))
-                    index_process = subprocess.Popen(indexing_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
-                    index_process.wait()
-                    index_code = index_process.returncode
-                    index_log, index_error = index_process.communicate()
-
-                    # Check for no output. If that fails there was a result.
-                    if re.match('(^[\s\n]{0,}$)', index_log) is None:
-                        score_tools = 0.0
-                        grade_report += 'Found index operation: Tools Score = 0.0\n'
-                        WebCat.addReport(config,'no-indexing_test_log.html','Fail Log from No-Indexing Tests', index_log)
-                    else:
-                        grade_report += 'No array indexing operations found. Good work!\n'
-                        print('No array indexing operations found. Good work!')
-                    if re.match('(^[\s\n]{0,}$)', index_error) is None:
-                        print('Errors running no-indexing!')
-                        print(index_error)
-                        # Oh boy a no-indexing error. Doesn't effect grade.
-                        WebCat.addReport(config,'no-indexing_test_error.html','No-Indexing Error', 'There was an error with the no-indexing check.\nThis won\'t effect your grade, tell your professor though.')
-                    
-            except:
-                print("Unexpected error inside no-indexing call: ", str(sys.exc_info()))
-                grade_report += 'Fatal Error In No-Indexing Block...\n'
-                score_tools = 0.0
-        else:
-            grade_report += 'No non test files found. Non test files must exist. Score = 0\n'
-            print('No non test files found.')
-            score_tools = 0.0
-            score_correctness = 0.0
-#=============================================================================================================================================================================================
+    # Finalize score.
     config['score.correctness'] = score_correctness
     config['score.tools']       = score_tools
 
+    # Delete temporary directory if specified.
     if config.get('doNotDelete', 'true') == 'false':
         shutil.rmtree(config['build'])
 
@@ -317,15 +346,17 @@ except:
     config['score.tools']       = 0.0
     grade_report += 'Fatal Error... Score 0.0\n'
 
+# Print out score in a formatted manner.
 score_str = '%.1f' % (config['score.correctness'] + config['score.tools']) 
 grade_report += 'Final Score: ' + score_str
 
+# Add the grading information as a report.
 try:
     WebCat.addReport(config,'grade_report.html','Grade Report', grade_report)
 except:
     print("Unexpected error writing grade report: ", str(sys.exc_info()))
 
-
+# Add coverage data as the final report.
 if add_coverage_report:
     WebCat.addExistingReport(config, 'coverageReport.html')
 

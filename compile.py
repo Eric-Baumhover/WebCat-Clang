@@ -3,7 +3,7 @@ from glob import glob as find
 import webcat as WebCat
 
 def getCompilerArgs(test_type, config : dict):
-
+    # Log of why arguments are being added.
     arg_log = 'Deciding on compilation arguments.\n\n'
 
     # Get necessary values from environment.
@@ -21,6 +21,7 @@ def getCompilerArgs(test_type, config : dict):
 
     args = []
     # Add default args.
+    # MOST ARGUMENTS ARE FROM CXL.
     if test_type != 'tool':
         args = ['-O0','-g3','-Wall','-fnon-call-exceptions','-finstrument-functions']
     else:
@@ -140,6 +141,7 @@ def compile(test_type, config):
 
         arg_log += '\nExecuting command: ' + ' '.join(command) + '\n'
 
+        # Run the command.
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         process.wait()
         code = process.returncode
@@ -148,6 +150,7 @@ def compile(test_type, config):
 
         title_start = 'Student Compiling ' if test_type == 'student' else 'Instructor Compiling '
 
+        # Report to WebCAT
         WebCat.addReport(config, test_type + '_compile_log.html', title_start + 'Tests', arg_log + log)
         if code != 0:
             WebCat.addReport(config, test_type + '_compile_error_log.html', title_start + 'Errors', error)

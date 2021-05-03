@@ -15,6 +15,7 @@ class MyPrinter : public MatchFinder::MatchCallback {
  public:
   virtual void run(const MatchFinder::MatchResult &Result) {
     ASTContext *Context = Result.Context;
+    // Ugly code: determines if code containing a statement is imporant, and returns its location and filename.
     if (const clang::Stmt *E =
             Result.Nodes.getNodeAs<clang::Stmt>("loops")) {
       FullSourceLoc FullLocation = Context->getFullLoc(E->getBeginLoc());
@@ -40,21 +41,26 @@ static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 static cl::extrahelp MoreHelp("\nMore help text...");
 
 int main(int argc, const char **argv) {
+  // Parse arguments.
   CommonOptionsParser OptionsParser(argc, argv, NoLoopsCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
 
+  // Initialize tools for finding specific statements.
   MyPrinter Printer;
   MatchFinder Finder;
 
+  // Match statements of specific types.
   StatementMatcher forMatcher =
       forStmt().bind("loops");
 	  
 	StatementMatcher whileMatcher =
       whileStmt().bind("loops");
 
+  // Prepare to compile and find them.
   Finder.addMatcher(forMatcher, &Printer);
   Finder.addMatcher(whileMatcher, &Printer);
 
+  // Go
   return Tool.run(newFrontendActionFactory(&Finder).get());
 }

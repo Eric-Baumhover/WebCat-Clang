@@ -4,8 +4,9 @@ import webcat as WebCat
 from time import sleep
 import fnmatch
 
+# Main code coverage function.
+# Called from execute.py
 def runCodeCoverage(config):
-    #TODO: Add fail checks
 
     # Get necessary directories
     build                   = config['build']
@@ -20,6 +21,7 @@ def runCodeCoverage(config):
     profdata_command = ['llvm-profdata-8','merge','-sparse', build + '/runStudentTests.profraw','-o', build + '/runStudentTests.profdata']
 
     print('Running command: ' + ' '.join(profdata_command))
+    # Directly report to WebCAT.
     code = WebCat.commandReport(profdata_command, config, 'llvm-profdata-log.html', 'LLVM-PROFDATA-8 Debug Log', True, True)
     if code != 0:
         print('Error in LLVM-PROFDATA command!')
@@ -35,6 +37,7 @@ def runCodeCoverage(config):
     print('Files for code coverage: ' + ' '.join(source_args))
     print()
 
+    # Check that there is any data to gather.
     if len(source_args) > 0:
 
         sources = ' '.join(source_args)
@@ -65,6 +68,8 @@ def runCodeCoverage(config):
         with open(result_dir + '/coverageReport.html', 'w') as file_data:
             markup_process = subprocess.Popen(base_args + source_args, stdout=file_data, stderr=subprocess.STDOUT, universal_newlines=True)
             code = markup_process.wait()
+
+        # Fix html styling for WebCAT.
 
         lines = []
         with open(result_dir + '/coverageReport.html', 'r') as file_data:

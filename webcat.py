@@ -1,8 +1,10 @@
 import os, sys, subprocess
 
+# Gets necessary WebCAT data.
 def importConfig(config_file_name):
 
     try:
+        # Parses config file.
         config_raw      = open(config_file_name, 'r').read()
         config_pairs    = config_raw.split('\n')
 
@@ -21,8 +23,10 @@ def importConfig(config_file_name):
         print("Import Config error: ", str(sys.exc_info()))
         return {}
 
+# Returns data to WebCAT.
 def exportConfig(config_file_name, config_data):
     try:
+        # Write to config file.
         config_export = open(config_file_name, 'w')
 
         lines = []
@@ -38,7 +42,9 @@ def exportConfig(config_file_name, config_data):
     except FileNotFoundError:
         print("Export Config error: ", str(sys.exc_info()))
 
+# Takes in a text string and wraps it in html. Outputs as a file and tells WebCAT to display it.
 def addReport(config, report_file_name, title, data):
+
     result_dir = config['resultDir']
     file_data = open(result_dir + '/' + report_file_name, 'w')
 
@@ -57,6 +63,7 @@ def addReport(config, report_file_name, title, data):
 
     addExistingReport(config, report_file_name)
 
+# Normally internal function for adding an html file as a report.
 def addExistingReport(config, report_file_name):
     reportNum = config['numReports'] + 1
     config['numReports'] = reportNum
@@ -64,6 +71,7 @@ def addExistingReport(config, report_file_name):
     config[report + '.file'] = report_file_name
     config[report + '.mimeType'] = 'text/html'
 
+# Useful function for running a command and reporting directly to WebCAT.
 def commandReport(command, config, report_file_name_prefix, title_prefix, combine=False, debug=False):
 
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr= subprocess.STDOUT if combine else subprocess.PIPE, universal_newlines=True)

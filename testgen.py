@@ -3,8 +3,10 @@ from glob import glob as find
 import webcat as WebCat
 
 def create_tests(test_type, config):
+    # CXXTESTGEN ARGS
     args = ['--error-printer', '--have-eh', '--abort-on-fail', '--no-static-init', '-o']
 
+    # Args are different between student and instructor.
     if test_type == 'student':
         args += [config['build'] + '/runStudentTests.cpp']
         args += find(config['basedir'] + '/*.h')

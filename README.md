@@ -85,4 +85,4 @@ Ver 1.2.2
 Added number of min test cases feature, code coverage implementation and style grading.
 
 Ver 1.3 (Current)
-Implemented any extra niche features, execution time greatly increased (15 sec to 3 sec processing time)
+Implemented any extra niche features, execution time greatly reduced (15 sec --> 3 sec processing time)

@@ -76,7 +76,7 @@ Ver 1.1
 First implementation of Clang still on Perl language.
 
 Ver 1.1.2
-Full transition to python as the main plugin for WebCat.
+Full transition to python as the main  language of the plugin .
 
 Ver 1.2
 Implementation of extra features such as: admin test output, no loops checker and no indexing.

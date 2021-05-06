@@ -1,7 +1,7 @@
 {
 	name = clang;
-	"version.major" = 0;
-	"version.minor" = 1;
+	"version.major" = 1;
+	"version.minor" = 3;
 	"version.revision" = 0;
 	"version.date" = 20210222;
 	autoPublish = true;

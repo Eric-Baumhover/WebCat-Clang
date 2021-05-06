@@ -54,11 +54,6 @@ try:
             base_path = os.path.basename(os.path.normpath(lf_path))
             shutil.copy(lf_path, config['basedir'] + base_path)
 
-    # Ensure executables are actually executable using a chmod call. Stable. If this breaks it will kill the grading completely.
-    print(os.popen('chmod +x ' + config['cxxtest.dir'] + '/bin/cxxtestgen').read())
-    print(os.popen('chmod +x ' + config['scriptHome'] + '/bin/no-loops').read())
-    print(os.popen('chmod +x ' + config['scriptHome'] + '/bin/no-indexing').read())
-
     # Make sure the temporary directory exists.
     os.mkdir(config['build'])
 

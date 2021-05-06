@@ -37,7 +37,7 @@ def gradeStyle(config, pathName, script, resultDir):
     runtimeCount = 0
     copyrightCount = 0
     readabilityCount = 0
-    includeCount = 0
+    includeCount = 0 
 
     outFile = open('style.txt', 'w')
 
@@ -68,7 +68,7 @@ def gradeStyle(config, pathName, script, resultDir):
                 readabilityCount=+1
                 
             if "include" in line:
-                includeCount=+1
+                includeCount=+1 
 
     #==============================================================
     # Calculate score:
@@ -82,9 +82,9 @@ def gradeStyle(config, pathName, script, resultDir):
     if (totalErrors > 10):
         actualScore = 0
 
-    #==============================================================
+    #=============================================================
     # Generate a readable report:
-    #==============================================================
+    #=============================================================
     # open my $f, '<', 'scriptRaw.txt';
     outFile2Name = "styleSummary.txt"
     outFile2 = open( '{}/'.format(resultDir) + outFile2Name, "w")
@@ -99,9 +99,9 @@ def gradeStyle(config, pathName, script, resultDir):
     outFile2.write("Total Errors \t\t\t\t{}\n".format(totalErrors))
     outFile2.write("Score:\t\t\t\t\t {}".format(actualScore))
 
-    #==============================================================
+    #=============================================================
     # Clean up:
-    #==============================================================
+    #=============================================================
     outFile2.close()
     outFile2 = open('{}/'.format(resultDir) + outFile2Name, "r")
     WebCat.addReport(config, outFile2Name, 'Style Report', outFile2.read())

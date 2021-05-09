@@ -1,4 +1,4 @@
-# WebCat-Clang
+# WebCat-Clang 
 WebCat plugin for grading C++ code using LLVM and Clang.
 
 # Why Clang / Overview of the issues

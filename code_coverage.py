@@ -1,8 +1,10 @@
-import os, glob, sys, subprocess, re
+import os, subprocess
 from glob import glob as find
 import webcat as WebCat
-from time import sleep
-import fnmatch
+
+# Globs a directory for a list of all C++ related files.
+def allCPPFiles(directory):
+    return find(directory + '/*.cpp') + find(directory + '/*.h') + find(directory + '/*.hpp') + find(directory + '/*.c') + find(directory + '/*.C') + find(directory + '/*.CPP') + find(directory + '/*.H') + find(directory + '/*.HPP')
 
 # Main code coverage function.
 # Called from execute.py
@@ -30,7 +32,15 @@ def runCodeCoverage(config):
 
     # Get a list of the original sources, 
     # needed to narrow coverage data.
-    source_files = find(basedir + '/*.cpp') + find(basedir + '/*.h')
+    source_files = allCPPFiles(basedir)
+
+    assignment_includes = config.get('assignmentIncludes', False)
+
+    # Add assignment includes to code coverage data and report if enable for this assignment.
+    if assignment_includes and config.get('assignmentIncludesCoverage', 'false') != 'false':
+        include_path = os.path.join(config['scriptData'],assignment_includes)
+        source_files += allCPPFiles(include_path)
+
     test_files = find(basedir + '/*test.h') + find(basedir + '/*Test.h')
     source_args = list(set(source_files).difference(test_files))
 
@@ -39,9 +49,6 @@ def runCodeCoverage(config):
 
     # Check that there is any data to gather.
     if len(source_args) > 0:
-
-        sources = ' '.join(source_args)
-
 
         # Convert data into a per file summarized json version.
         json_export_command = ['llvm-cov-8','export','-summary-only','-instr-profile',build + '/runStudentTests.profdata',student_tests]

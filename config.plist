@@ -71,6 +71,12 @@
 			description = "A directory of files to place on the include path while compiling the\n\n  student's code (as well as instructor reference tests).  This directory\n\n  appears earlier on the include path than the reusable configuration setting.\n\n  The default is to use no path.";
 		},
 		{
+			property = "assignmentIncludesCoverage";
+			type = boolean;
+			name = "Run Code Coverage on Assignment Include Directory";
+			description = "Includes assignment specific includes into the code coverage report and data. Requires Code Coverage to be enabled. Useful for blackbox testing and preventing cheating.";
+		},
+		{
 			property = assignmentLib;
 			type = file;
 			fileTypes = (

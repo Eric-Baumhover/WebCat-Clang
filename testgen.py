@@ -1,4 +1,4 @@
-import os, sys, subprocess
+import os, sys, subprocess, stat
 from glob import glob as find
 import webcat as WebCat
 
@@ -15,7 +15,13 @@ def create_tests(test_type, config):
         args += [config['build'] + '/runInstructorTests.cpp']
         args += [os.path.join(config['scriptData'],config['testCases'])]
     
-    args = [config['cxxtest.dir'] + '/bin/cxxtestgen'] + args
+    program = config['cxxtest.dir'] + '/bin/cxxtestgen'
+
+    if not os.access(program, os.X_OK):
+        print('CXXTESTGEN is not executable, running chmod.')
+        os.chmod(program, 0o777)
+
+    args = [program] + args
 
     print('Executing command: ' + ' '.join(args))
     test_process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)

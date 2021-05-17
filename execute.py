@@ -1,5 +1,5 @@
 # Generic Python imports
-import os, sys, subprocess, re, math, shutil
+import os, sys, subprocess, re, math, shutil, stat
 from glob import glob as find
 
 # Other files in plugin.
@@ -264,7 +264,13 @@ try:
     #              No-Loops Test Block
     #=============================================================================================================================================================================================
                         # Run the tool.
-                        loop_command = [config['scriptHome'] + '/bin/no-loops'] + source_args + getCompilerArgs('tool', config)[0]
+                        program = config['scriptHome'] + '/bin/no-loops'
+
+                        if not os.access(program, os.X_OK):
+                            print('No-Loops is not executable, running chmod.')
+                            os.chmod(program, 0o777)
+
+                        loop_command = [program] + source_args + getCompilerArgs('tool', config)[0]
                         print('Running no-loops: ' + ' '.join(loop_command))
                         loop_process = subprocess.Popen(loop_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
                         loop_process.wait()
@@ -296,7 +302,13 @@ try:
     #              No-Indexing Test Block
     #=============================================================================================================================================================================================
                         # Run the tool.
-                        indexing_command = [config['scriptHome'] + '/bin/no-indexing'] + source_args + getCompilerArgs('tool', config)[0]
+                        program = config['scriptHome'] + '/bin/no-indexing'
+
+                        if not os.access(program, os.X_OK):
+                            print('No-Indexing is not executable, setting permissions.')
+                            os.chmod(program, 0o777)
+                        
+                        indexing_command = [program] + source_args + getCompilerArgs('tool', config)[0]
                         print('Running no-indexing: ' + ' '.join(indexing_command))
                         index_process = subprocess.Popen(indexing_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, cwd=config['basedir'])
                         index_process.wait()

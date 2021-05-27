@@ -84,5 +84,8 @@ Implementation of extra features such as: admin test output, no loops checker an
 Ver 1.2.2
 Added number of min test cases feature, code coverage implementation and style grading.
 
-Ver 1.3 (Current)
+Ver 1.3
 Implemented any extra niche features, execution time greatly reduced (15 sec --> 3 sec processing time)
+
+Ver 1.4  (Current)
+Fixed Grading, fixed executables not working, fixed style grading.

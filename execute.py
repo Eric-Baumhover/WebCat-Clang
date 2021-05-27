@@ -64,7 +64,7 @@ try:
     config['score.correctness'] = 0.0
     config['score.tools'] = 0.0
     score_correctness = float(config['max.score.correctness'])
-    score_tools       = float(config['max.score.tools'])
+    score_style       = float(config['max.score.tools'])
 
 #=============================================================================================================================================================================================
 #              Student Test Block
@@ -80,7 +80,13 @@ try:
             # First specify where coverage data should go, regardless of if we need it.
             os.environ['LLVM_PROFILE_FILE'] = config['build'] + '/runStudentTests.profraw'
             # Run the tests.
-            test_process = subprocess.Popen([config['student.tests']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            program = config['student.tests']
+                    
+            if not os.access(program, os.X_OK):
+                print('No-Loops is not executable, running chmod.')
+                os.chmod(program, 0o777)
+
+            test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             test_process.wait()
             # Get the return code and logs. Test_Error is moved into Test_Log immediately, so its always null.
             test_code = test_process.returncode
@@ -161,8 +167,8 @@ try:
                         if not result:
                             # Give a zero for failed coverage.
                             print('Bad code coverage')
-                            grade_report += 'Not all code covered: Tools Score = 0.0\n'
-                            score_tools = 0.0
+                            grade_report += 'Not all code covered: Correctness Score = 0.0\n'
+                            score_correctness = 0.0
                         else:
                             grade_report += 'You have perfect coverage, nice.\n'
                         # Grab minimum templates needed.
@@ -176,11 +182,11 @@ try:
                     else:
                         print("Unexpected error running code coverage: ")
                         grade_report += 'Error In Code Coverage Generation Block...\n'
-                        score_tools = 0.0
+                        score_correctness = 0.0
             except:
                 print("Unexpected error running code coverage: ", str(sys.exc_info()))
                 grade_report += 'Fatal Error In Code Coverage Test Block...\n'
-                score_tools = 0.0
+                score_correctness = 0.0
                 
             
         else:
@@ -188,7 +194,7 @@ try:
             student_successful = False
             grade_report += 'Student Failed to compile: Score = 0.0\n'
             score_correctness = 0.0
-            score_tools = 0.0
+            score_style = 0.0
     except:
         print("Unexpected error running student tests: ", str(sys.exc_info()))
         grade_report += 'Fatal Error In Student Block...\n'
@@ -210,7 +216,14 @@ try:
                 compile_return = compile('instructor', config)
                 if compile_return == 0:
                     # Run the instructor's executable.
-                    test_process = subprocess.Popen([config['instructor.tests']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+
+                    program = config['instructor.tests']
+
+                    if not os.access(program, os.X_OK):
+                        print('No-Loops is not executable, running chmod.')
+                        os.chmod(program, 0o777)
+
+                    test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                     test_process.wait()
 
                     test_code = test_process.returncode
@@ -241,8 +254,8 @@ try:
         if style_score < 10:
             # Ten is the max style score.
             coefficient = style_score / 10.0
-            grade_report += 'Did not have perfect style score, you got "' + str(style_score) + '": Tools Points Lost = ' + "%.1f" % (score_tools * (1.0 - coefficient)) + '\n'
-            score_tools *= coefficient
+            grade_report += 'Did not have perfect style score, you got "' + str(style_score) + '": Style Points Lost = ' + "%.1f" % (score_style * (1.0 - coefficient)) + '\n'
+            score_style *= coefficient
         else:
             grade_report += 'Perfect style, nice.\n'
 
@@ -279,8 +292,8 @@ try:
 
                         # Check for no output. If that fails there was a result.
                         if re.match('(^[\s\n]{0,}$)', loop_log) is None:
-                            score_tools = 0.0
-                            grade_report += 'Found loops: Tools Score = 0.0\n'
+                            score_correctness = 0.0
+                            grade_report += 'Found loops: Correctness Score = 0.0\n'
                             WebCat.addReport(config,'no-loops_test_log.html','Fail Log from No-Loop Tests', loop_log)
                         else:
                             grade_report += 'No loops found. Good work!\n'
@@ -294,7 +307,7 @@ try:
                 except:
                     print("Unexpected error inside no-loops call: ", str(sys.exc_info()))
                     grade_report += 'Fatal Error In No-Loops Block...\n'
-                    score_tools = 0.0
+                    score_correctness = 0.0
 
                 try:
                     if config.get('noIndexing', 'false') != 'false':
@@ -317,8 +330,8 @@ try:
 
                         # Check for no output. If that fails there was a result.
                         if re.match('(^[\s\n]{0,}$)', index_log) is None:
-                            score_tools = 0.0
-                            grade_report += 'Found index operation: Tools Score = 0.0\n'
+                            score_correctness = 0.0
+                            grade_report += 'Found index operation: Correctness Score = 0.0\n'
                             WebCat.addReport(config,'no-indexing_test_log.html','Fail Log from No-Indexing Tests', index_log)
                         else:
                             grade_report += 'No array indexing operations found. Good work!\n'
@@ -332,16 +345,16 @@ try:
                 except:
                     print("Unexpected error inside no-indexing call: ", str(sys.exc_info()))
                     grade_report += 'Fatal Error In No-Indexing Block...\n'
-                    score_tools = 0.0
+                    score_correctness = 0.0
             else:
                 grade_report += 'No non test files found. Non test files must exist. Score = 0\n'
                 print('No non test files found.')
-                score_tools = 0.0
+                score_style = 0.0
                 score_correctness = 0.0
 #=============================================================================================================================================================================================
     # Finalize score.
     config['score.correctness'] = score_correctness
-    config['score.tools']       = score_tools
+    config['score.tools']       = score_style
 
     # Delete temporary directory if specified.
     if config.get('doNotDelete', 'true') == 'false':

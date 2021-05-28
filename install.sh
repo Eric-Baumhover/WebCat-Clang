@@ -7,6 +7,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 git clone "https://github.com/CxxTest/cxxtest.git"
+chmod -R 777 cxxtest
 
 # Ensure executables are executable.
 chmod +x cxxtest/bin/cxxtestgen

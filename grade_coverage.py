@@ -14,23 +14,29 @@ def gradeCoverage(filepath, functions, instantiations, lines, regions):
     # Rough estimate number.
     template_count = x['data'][0]['totals']['instantiations']['count'] / x['data'][0]['totals']['functions']['count']
     
-    # If any of the next percentages aren't 100, fail.
+
+    total = 0
+    counted = 0
 
     # Retrieve the percentage of functions covered.
-    if functions and x['data'][0]['totals']['functions']['percent'] != 100:
-        return [False, template_count]
+    if functions:
+        total   += x['data'][0]['totals']['functions']['percent']
+        counted += 1
     
     # Retrieve the percentage of instantiations (templates) covered.
-    if instantiations and x['data'][0]['totals']['instantiations']['percent'] != 100:
-        return [False, template_count]
+    if instantiations:
+        total   += x['data'][0]['totals']['instantiations']['percent']
+        counted += 1
     
     # Retrive the percentage of lines covered.
-    if lines and x['data'][0]['totals']['lines']['percent'] != 100:
-        return [False, template_count]
+    if lines:
+        total   += x['data'][0]['totals']['lines']['percent']
+        counted += 1
     
     # Retrieve the percentage of regions covered.
-    if regions and x['data'][0]['totals']['regions']['percent'] != 100:
-        return [False, template_count]
+    if regions:
+        total   += x['data'][0]['totals']['regions']['percent']
+        counted += 1
 
     # All perfect.
-    return [True, template_count]
+    return [float(total) / counted, template_count]

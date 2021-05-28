@@ -83,8 +83,10 @@ try:
             program = config['student.tests']
                     
             if not os.access(program, os.X_OK):
-                print('No-Loops is not executable, running chmod.')
+                print('Student Test exec not executable, running chmod.')
                 os.chmod(program, 0o777)
+
+            print('Running {}'.format(program))
 
             test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             test_process.wait()
@@ -164,11 +166,18 @@ try:
                         
                         # Run grader. (in grade_coverage.py)
                         result, templates = gradeCoverage(config['resultDir'] + '/coverageData.json', True, inst, lines, regions)
-                        if not result:
-                            # Give a zero for failed coverage.
-                            print('Bad code coverage')
-                            grade_report += 'Not all code covered: Correctness Score = 0.0\n'
-                            score_correctness = 0.0
+                        if result < 100.0:
+                            if config.get('allCodeMustBeCovered', 'false') != 'false':
+                                # Give a zero for failed coverage.
+                                print('Bad code coverage, 0')
+                                grade_report += 'Incomplete code coverage, must be completely covered. Correctness score = 0\n'
+                                score_correctness = 0
+                            else:
+                                #Give Partial credit
+                                print('Bad code coverage')
+                                coefficient = result / 100.0
+                                grade_report += 'Did not achieve perfect coverage, percent covered: "' + ("%.1f" % result) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                                score_correctness *= coefficient
                         else:
                             grade_report += 'You have perfect coverage, nice.\n'
                         # Grab minimum templates needed.
@@ -220,8 +229,10 @@ try:
                     program = config['instructor.tests']
 
                     if not os.access(program, os.X_OK):
-                        print('No-Loops is not executable, running chmod.')
+                        print('Instructor Test exec is not executable, running chmod.')
                         os.chmod(program, 0o777)
+
+                    print('Running {}'.format(program))
 
                     test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                     test_process.wait()

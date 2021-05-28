@@ -1,7 +1,7 @@
 {
 	name = clang;
 	"version.major" = 1;
-	"version.minor" = 3;
+	"version.minor" = 4;
 	"version.revision" = 0;
 	"version.date" = 20210222;
 	autoPublish = true;
@@ -56,6 +56,12 @@
 			type = boolean;
 			name = "Enable Code Coverage Check";
 			description = "Adds the generation of coverage data to student tests and alters the grade accordingly.";
+		},
+		{
+			property = "allCodeMustBeCovered";
+			type = boolean;
+			name = "All Code Must Be Covered";
+			description = "If you are truly following test-driven development practices, then no code should be uncovered.";
 		},
 		{
 			property = localFiles;

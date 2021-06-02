@@ -96,7 +96,7 @@ def addMarkup(config, file_name, text : str):
     lineNum = 1
     for line in split:
         num = str(lineNum)
-        line = line.replace('"', '&quot;').replace("'", '&apos;').replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+        #line = line.replace('"', '&quot;').replace("'", '&apos;').replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
         html += '<tr id="O:' + num + '"><td align="right" class="lineCount" id="O:' + num + '">&#160;' + num + '</td><td align="right" class="coverageCount" id="O:' + num + '">&#160;&#160;</td><td class="srcLine" id="O:' + num + '"><pre class="srcLine" id="O:' + num + '">&#160;<span>' + line + '</span></pre></td></tr>'
         lineNum += 1
     html += '</tbody></table>'

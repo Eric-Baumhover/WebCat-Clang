@@ -381,6 +381,18 @@ except:
 score_str = '%.1f' % (config['score.correctness'] + config['score.tools']) 
 grade_report += 'Final Score: ' + score_str
 
+try:
+    os.mkdir(config['resultDir'] + '/html')
+
+    basedir = config['basedir']
+
+    source_files = find(basedir + '/*.cpp') + find(basedir + '/*.h')
+    for file in source_files:
+        with open(file,'r') as file_data:
+            WebCat.addMarkup(config, os.path.basename(file), file_data.read())
+except:
+    print("Unexpected error writing markups: ", str(sys.exc_info()))
+
 # Add the grading information as a report.
 try:
     WebCat.addReport(config,'grade_report.html','Grade Report', grade_report)

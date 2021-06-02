@@ -57,7 +57,7 @@ def addReport(config, report_file_name, title, data):
 
     file_data.write('</div>')
 
-    file_data.write('</td></tr></tbody></table></div><div class="spacer">&nbsp;</div>')
+    file_data.write('</td></tr></tbody></table></div><div class="spacer">&#160;</div>')
 
     file_data.close()
 
@@ -89,3 +89,24 @@ def commandReport(command, config, report_file_name_prefix, title_prefix, combin
         if not combine:
             print(error)
     return code
+
+def addMarkup(config, file_name, text : str):
+    html = '<table cellspacing="0" cellpadding="0" class="srcView" bgcolor="white" id="bigtab"><tbody id="tab">'
+    split = text.split('\n')
+    lineNum = 1
+    for line in split:
+        num = str(lineNum)
+        line = line.replace('"', '&quot;').replace("'", '&apos;').replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
+        html += '<tr id="O:' + num + '"><td align="right" class="lineCount" id="O:' + num + '">&#160;' + num + '</td><td align="right" class="coverageCount" id="O:' + num + '">&#160;&#160;</td><td class="srcLine" id="O:' + num + '"><pre class="srcLine" id="O:' + num + '">&#160;<span>' + line + '</span></pre></td></tr>'
+        lineNum += 1
+    html += '</tbody></table>'
+    with open("{}/html/{}.html".format(config['resultDir'], file_name), 'w') as file_data:
+        file_data.write(html)
+
+    #Format is not valid yet. Cannot be an actual Markup
+
+    #markupNum = config['numCodeMarkups'] + 1
+    #config['numCodeMarkups'] = markupNum
+    #name = 'codeMarkup' + str(markupNum)
+    #config[name + '.sourceFileName'] = file_name
+    #config[name + '.markupFileName'] = "html/{}.html".format(file_name)

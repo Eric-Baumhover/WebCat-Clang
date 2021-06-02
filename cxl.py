@@ -46,7 +46,7 @@ def gradeStyle(config, pathName, script, resultDir):
         lines = f.readlines()
         for line in lines:
 
-            if line.find('#') == -1:
+            if line.find('#') == -1 or line.find('#include') != -1 or line.find('/*...*/') != -1:
                 outFile.write(line)
 
             if "whitespace" in line:

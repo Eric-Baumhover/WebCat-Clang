@@ -2,7 +2,7 @@ import os, glob, sys, subprocess
 from glob import glob as find
 import webcat as WebCat
 
-def getCompilerArgs(test_type, config : dict):
+def getCompilerArgs(test_type, config):
     # Log of why arguments are being added.
     arg_log = 'Deciding on compilation arguments.\n\n'
 

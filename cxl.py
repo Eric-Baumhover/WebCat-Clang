@@ -26,7 +26,13 @@ def gradeStyle(config, pathName, script, resultDir):
     # Build and execute python command for cpplint:
     #==============================================================
     with open('{}/'.format(resultDir) + "scriptRaw.txt", 'w') as out:
-        res = sp.getoutput("python {} --verbose=5 --exclude=*/ --exclude=*.zip --exclude=*.txt --quiet --root=chrome/browser {}".format(script, seperator.join(files)))
+        process = sp.Popen("python {} --verbose=5 --exclude=*/ --exclude=*.zip --exclude=*.txt --quiet --root=chrome/browser {}".format(script, seperator.join(files)).split(" "), stdout=sp.PIPE, stderr=sp.STDOUT, universal_newlines=True)
+        process.wait()
+        # Get the return code and logs. Test_Error is moved into Test_Log immediately, so its always null.
+        test_code = process.returncode
+        test_log, test_error = process.communicate()
+
+        res = test_log
         out.write(res)
     
 

@@ -88,7 +88,7 @@ try:
 
             print('Running {}'.format(program))
 
-            test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             test_process.wait()
             # Get the return code and logs. Test_Error is moved into Test_Log immediately, so its always null.
             test_code = test_process.returncode
@@ -102,7 +102,7 @@ try:
             # Check for failed match.
             if cases_match is None:
                 print('No cases found by RegEx')
-                grade_report += 'Error parsing cxxtest test number: Correctness = 0.0\n'
+                grade_report += '\nError parsing cxxtest test number: Correctness = 0.0\n\n'
                 score_correctness = 0.0
 
             # Store count as int.
@@ -112,11 +112,15 @@ try:
             # Display the result to WebCat. This is a utility function that is used a lot.
             WebCat.addReport(config,'student_test_log.html','Log from Student Tests', test_log)
             if test_code != 0:
+
+                test_log += '\n\nTests contained errors, if no error message is present, then your tests crashed on the server.\nPlease do not use absolute filepaths and beware of operating system accessing functions.\nThese can cause errorless crashes.'
+
+                WebCat.addReport(config,'student_test_error.html','Error from Student Tests', test_error)
                 # If tests failed, decide how to grade.
                 if config['allStudentTestsMustPass'] == 'true':
                     # If all must pass, that didn't happen, so 0.
                     print('Not all tests passed, a zero for you.')
-                    grade_report += 'Not all tests passed: Correctness = 0.0\n'
+                    grade_report += '\nNot all tests passed: Correctness = 0.0\n\n'
                     score_correctness = 0.0
                 else:
                     # Find out how many passed.
@@ -125,7 +129,7 @@ try:
                     if final_match is None:
                         # If the percentage cannot be found, a 0 must be given.
                         print('No result percentage found in log.')
-                        grade_report += 'Not all tests passed and result percentage not found: Correctness = 0.0\n'
+                        grade_report += '\nNot all tests passed and result percentage not found: Correctness = 0.0\n\n'
                         score_correctness = 0.0
                     else:
                         # Calculate percentage from match.
@@ -134,7 +138,7 @@ try:
                         percent = int(percent_string)
                         print(percent / 100)
                         coefficient = percent / 100
-                        grade_report += 'Not all student tests passed: Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                        grade_report += '\nNot all student tests passed: Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n\n'
                         score_correctness *= coefficient
             else:
                 grade_report += 'Your tests passed, nice.\n'
@@ -144,7 +148,7 @@ try:
             if test_cases < minimum_tests and minimum_tests != 0:
                 print('Not enough tests')
                 coefficient = test_cases / minimum_tests
-                grade_report += 'Did not reach minimum number of tests "' + str(minimum_tests) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                grade_report += '\nDid not reach minimum number of tests "' + str(minimum_tests) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n\n'
                 score_correctness *= coefficient
             else:
                 grade_report += 'You have enough tests, nice.\n'
@@ -170,13 +174,13 @@ try:
                             if config.get('allCodeMustBeCovered', 'false') != 'false':
                                 # Give a zero for failed coverage.
                                 print('Bad code coverage, 0')
-                                grade_report += 'Incomplete code coverage, must be completely covered. Correctness score = 0\n'
+                                grade_report += '\nIncomplete code coverage, must be completely covered. Correctness score = 0\nThe instructor has turned off partial grading for code coverage.\n\n'
                                 score_correctness = 0
                             else:
                                 #Give Partial credit
                                 print('Bad code coverage')
                                 coefficient = result / 100.0
-                                grade_report += 'Did not achieve perfect coverage, percent covered: "' + ("%.1f" % result) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                                grade_report += '\nDid not achieve perfect coverage, percent covered: "' + ("%.1f" % result) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n\n'
                                 score_correctness *= coefficient
                         else:
                             grade_report += 'You have perfect coverage, nice.\n'
@@ -185,28 +189,28 @@ try:
                         min_templates = int(config.get('minimumTemplateInstances', 0))
                         if math.ceil(templates) < min_templates:
                             coefficient = math.ceil(templates) / min_templates
-                            grade_report += 'Did not reach minimum ratio of covered templates "' + str(min_templates) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n'
+                            grade_report += '\nDid not reach minimum ratio of covered templates "' + str(min_templates) + '": Correctness Points Lost = ' + "%.1f" % (score_correctness * (1.0 - coefficient)) + '\n\n'
                             score_correctness *= coefficient
                             print('Not enough template instances.')
                     else:
                         print("Unexpected error running code coverage: ")
-                        grade_report += 'Error In Code Coverage Generation Block...\n'
+                        grade_report += '\nError In Code Coverage Generation Block...\n\n'
                         score_correctness = 0.0
             except:
                 print("Unexpected error running code coverage: ", str(sys.exc_info()))
-                grade_report += 'Fatal Error In Code Coverage Test Block...\n'
+                grade_report += '\nFatal Error In Code Coverage Test Block...\n\n'
                 score_correctness = 0.0
                 
             
         else:
             # If student code didn't compile, they get a full zero and nothing else runs.
             student_successful = False
-            grade_report += 'Student Failed to compile: Score = 0.0\n'
+            grade_report += '\nStudent Code Failed to compile: Score = 0.0\n\n'
             score_correctness = 0.0
             score_style = 0.0
     except:
         print("Unexpected error running student tests: ", str(sys.exc_info()))
-        grade_report += 'Fatal Error In Student Block...\n'
+        grade_report += '\nFatal Error In Student Block.\nPlease report to instructor.\n\n'
         config['score.correctness'] = 0
 #=============================================================================================================================================================================================
 
@@ -234,7 +238,7 @@ try:
 
                     print('Running {}'.format(program))
 
-                    test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                    test_process = subprocess.Popen([program], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
                     test_process.wait()
 
                     test_code = test_process.returncode
@@ -243,7 +247,8 @@ try:
                     # Report to WebCAT. If there is an error give a 0.
                     WebCat.addReport(config,'instructor_test_log.html','Log from Instructor Tests', test_log)
                     if test_code != 0:
-                        grade_report += 'Not all instructor tests passed: Correctness Score = 0.0\n'
+                        WebCat.addReport(config,'instructor_test_error.html','Error from Instructor Tests', test_error)
+                        grade_report += '\nNot all instructor tests passed: Correctness Score = 0.0\n\n'
 
                         score_correctness = 0.0
 
@@ -251,11 +256,11 @@ try:
                         grade_report += 'No problems with instructor tests, nice.\n'
                         instructorRan = True
                 else:
-                    grade_report += 'Instructor tests failed to compile: Correctness Score = 0.0\n'
+                    grade_report += '\nInstructor tests failed to compile: Correctness Score = 0.0\n\n'
                     score_correctness = 0.0
         except:
             print("Unexpected error running instructor tests: ", str(sys.exc_info()))
-            grade_report += 'Fatal Error In Instructor Tests Block...\n'
+            grade_report += '\nFatal Error In Instructor Tests Block.\nReport to instructor.\n\n'
             score_correctness = 0.0
 #=============================================================================================================================================================================================
         
@@ -265,7 +270,7 @@ try:
         if style_score < 10:
             # Ten is the max style score.
             coefficient = style_score / 10.0
-            grade_report += 'Did not have perfect style score, you got "' + str(style_score) + '": Style Points Lost = ' + "%.1f" % (score_style * (1.0 - coefficient)) + '\n'
+            grade_report += '\nDid not have perfect style score, you got "' + str(style_score) + '": Style Points Lost = ' + "%.1f" % (score_style * (1.0 - coefficient)) + '\n\n'
             score_style *= coefficient
         else:
             grade_report += 'Perfect style, nice.\n'
@@ -304,7 +309,7 @@ try:
                         # Check for no output. If that fails there was a result.
                         if re.match('(^[\s\n]{0,}$)', loop_log) is None:
                             score_correctness = 0.0
-                            grade_report += 'Found loops: Correctness Score = 0.0\n'
+                            grade_report += '\nFound loops: Correctness Score = 0.0\n\n'
                             WebCat.addReport(config,'no-loops_test_log.html','Fail Log from No-Loop Tests', loop_log)
                         else:
                             grade_report += 'No loops found. Good work!\n'
@@ -317,7 +322,7 @@ try:
                         
                 except:
                     print("Unexpected error inside no-loops call: ", str(sys.exc_info()))
-                    grade_report += 'Fatal Error In No-Loops Block...\n'
+                    grade_report += '\nFatal Error In No-Loops Block.\nUgh.\n\n'
                     score_correctness = 0.0
 
                 try:
@@ -342,7 +347,7 @@ try:
                         # Check for no output. If that fails there was a result.
                         if re.match('(^[\s\n]{0,}$)', index_log) is None:
                             score_correctness = 0.0
-                            grade_report += 'Found index operation: Correctness Score = 0.0\n'
+                            grade_report += '\nFound index operation: Correctness Score = 0.0\n\n'
                             WebCat.addReport(config,'no-indexing_test_log.html','Fail Log from No-Indexing Tests', index_log)
                         else:
                             grade_report += 'No array indexing operations found. Good work!\n'
@@ -355,10 +360,10 @@ try:
                         
                 except:
                     print("Unexpected error inside no-indexing call: ", str(sys.exc_info()))
-                    grade_report += 'Fatal Error In No-Indexing Block...\n'
+                    grade_report += '\nFatal Error In No-Indexing Block...\nUgh.\n\n'
                     score_correctness = 0.0
             else:
-                grade_report += 'No non test files found. Non test files must exist. Score = 0\n'
+                grade_report += '\nNo non test files found. Non test files must exist. Score = 0\n\n'
                 print('No non test files found.')
                 score_style = 0.0
                 score_correctness = 0.0
@@ -375,7 +380,7 @@ except:
     print("Unexpected error: ", sys.exc_info())
     config['score.correctness'] = 0.0
     config['score.tools']       = 0.0
-    grade_report += 'Fatal Error... Score 0.0\n'
+    grade_report += '\nFatal Error Crashed Grading. Score 0.0\nAbsolutely report this to the professor.\n\n'
 
 # Print out score in a formatted manner.
 score_str = '%.1f' % (config['score.correctness'] + config['score.tools']) 
